@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hidz | TV</title>
+    <link rel="icon" type="image/png" href="https://www.gobox.my.id/file/IcHjU.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent: #38bdf8;
+            --accent2: #818cf8;
+            --accent3: #f472b6;
+            --glow: rgba(56, 189, 248, 0.18);
+            --glow2: rgba(129, 140, 248, 0.14);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #030507;
+            color: white;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        /* Premium ambient background layers */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 10% 0%, rgba(56, 189, 248, 0.06) 0%, transparent 55%),
+                radial-gradient(ellipse 60% 50% at 90% 80%, rgba(129, 140, 248, 0.05) 0%, transparent 55%),
+                radial-gradient(ellipse 50% 40% at 50% 110%, rgba(244, 114, 182, 0.04) 0%, transparent 55%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Scanline cinematic overlay */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 3px,
+                rgba(255,255,255,0.006) 3px,
+                rgba(255,255,255,0.006) 4px
+            );
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        h1, h2, h3, h4, h5 {
+            font-family: 'Syne', sans-serif;
+        }
+
+        @keyframes gradient-x {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .animate-gradient-x {
+            background-size: 200% 200%;
+            animation: gradient-x 4s ease infinite;
+        }
+
+        .animate-in {
+            animation: fadeIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(14px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .sticky-player {
+            position: sticky;
+            top: 3.5rem;
+            z-index: 90;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 0 1px rgba(56,189,248,0.05);
+        }
+
+        .rgb-text {
+            background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 20px rgba(129,140,248,0.4));
+        }
+
+        /* Enhanced header */
+        header {
+            background: rgba(3, 5, 7, 0.92) !important;
+            border-bottom: 1px solid rgba(56, 189, 248, 0.12) !important;
+            box-shadow: 0 1px 40px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(56,189,248,0.06) !important;
+        }
+
+        /* Enhanced nav */
+        nav {
+            background: rgba(3, 5, 7, 0.97) !important;
+            border-top: 1px solid rgba(129, 140, 248, 0.1) !important;
+            box-shadow: 0 -15px 50px rgba(0,0,0,0.95), 0 -1px 0 rgba(56,189,248,0.06) !important;
+        }
+
+        /* Active nav glow */
+        #nav-home.text-blue-500,
+        #nav-dev.text-blue-500 {
+            text-shadow: 0 0 20px rgba(56, 189, 248, 0.9);
+            filter: drop-shadow(0 0 8px rgba(56,189,248,0.6));
+        }
+
+        /* User avatar button premium */
+        header [data-lucide="user"] {
+            filter: drop-shadow(0 0 6px rgba(56,189,248,0.4));
+        }
+
+        /* Video player premium */
+        #video-player {
+            background: #000;
+        }
+
+        /* Channel card hover glow */
+        .channel-card:hover {
+            box-shadow: 0 0 30px rgba(56, 189, 248, 0.12), 0 8px 40px rgba(0,0,0,0.8) !important;
+        }
+
+        /* Premium scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(56,189,248,0.3); border-radius: 4px; }
+
+        /* Live dot pulse glow */
+        .bg-green-500.animate-pulse {
+            box-shadow: 0 0 10px #22c55e, 0 0 20px rgba(34,197,94,0.4) !important;
+        }
+
+        /* Blue button premium glow */
+        .bg-blue-600, .hover\:bg-blue-600:hover {
+            box-shadow: 0 0 20px rgba(37, 99, 235, 0.5) !important;
+        }
+
+        /* Content area above z-index of bg */
+        #main-content { position: relative; z-index: 1; }
+    </style>
+</head>
+<body>
+
+    <!-- Header Statis / Watermark -->
+    <header class="fixed top-0 inset-x-0 h-14 flex items-center justify-between px-6 z-[100] bg-black/90 backdrop-blur-xl border-b border-white/[0.05]">
+        <div onclick="showPage('home')" class="cursor-pointer select-none transition-all hover:brightness-125 italic flex items-center gap-1.5">
+            <div class="w-6 h-6 rounded-md overflow-hidden flex-shrink-0">
+                <img src="https://www.gobox.my.id/file/IcHjU.png" class="w-full h-full object-cover" alt="icon">
+            </div>
+            <span class="text-lg font-[900] tracking-tighter rgb-text animate-gradient-x" style="font-family:'Syne',sans-serif">Hidz</span>
+            <span class="text-white font-[900] text-lg" style="font-family:'Syne',sans-serif;letter-spacing:-0.04em">TV</span>
+        </div>
+        <div onclick="showPage('dev')" class="w-9 h-9 rounded-full flex items-center justify-center border cursor-pointer active:scale-90 transition-all" style="background:rgba(56,189,248,0.07);border-color:rgba(56,189,248,0.2);box-shadow:0 0 16px rgba(56,189,248,0.08)">
+            <i data-lucide="user" class="w-4 h-4" style="color:#38bdf8"></i>
+        </div>
+    </header>
+
+    <!-- Dynamic Content Area -->
+    <div id="main-content" class="pb-32"></div>
+
+    <!-- Navigasi Bawah -->
+    <nav class="fixed bottom-0 inset-x-0 h-16 bg-black/95 backdrop-blur-2xl border-t border-white/5 flex items-center justify-around z-[100] px-10 shadow-[0_-10px_30px_rgba(0,0,0,0.8)]">
+        <button onclick="showPage('home')" id="nav-home" class="flex flex-col items-center gap-1 transition-all duration-300 active:scale-75 text-blue-500" style="font-family:'Outfit',sans-serif">
+            <i data-lucide="home" class="w-5 h-5"></i>
+            <span class="text-[8px] font-[800] uppercase tracking-[0.2em]">BERANDA</span>
+        </button>
+        
+        <div class="opacity-[0.01] scale-50 pointer-events-none">
+           <i data-lucide="monitor" class="w-5 h-5"></i>
+        </div>
+
+        <button onclick="showPage('dev')" id="nav-dev" class="flex flex-col items-center gap-1 transition-all duration-300 active:scale-75 text-gray-500 hover:text-white" style="font-family:'Outfit',sans-serif">
+            <i data-lucide="user" class="w-5 h-5"></i>
+            <span class="text-[8px] font-[800] uppercase tracking-[0.2em]">PENGEMBANG</span>
+        </button>
+    </nav>
+
+    <script>
+        // === KONFIGURASI SALURAN ===
+        const RAW_CHANNELS = [
+            { name: 'RTV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h10/index.m3u8', color: 'from-purple-600 to-indigo-900' },
+            { name: 'RTV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h10/02.m3u8', color: 'from-purple-600 to-indigo-900' },
+            { name: 'RTV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h10/01.m3u8', color: 'from-purple-600 to-indigo-900' },
+            { name: 'TRANS7', url: 'https://video.detik.com/trans7/smil:trans7.smil/playlist.m3u8', color: 'from-red-600 to-blue-800' },
+            { name: 'TRANS7', url: 'https://video.detik.com/trans7/smil:trans7.smil/chunklist_w286481765_b744100_sleng.m3u8', color: 'from-red-600 to-blue-800' },
+            { name: 'TRANS TV', url: 'https://video.detik.com/transtv/smil:transtv.smil/playlist.m3u8', color: 'from-sky-500 to-blue-700' },
+            { name: 'TV ONE', url: 'https://video.detik.com/transtv/smil:transtv.smil/chunklist_w1110309016_b744100_sleng.m3u8', color: 'from-red-600 to-black' },
+            { name: 'TV ONE', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h40/index.m3u8', color: 'from-red-600 to-black' },
+            { name: 'TV ONE', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h40/02.m3u8', color: 'from-red-600 to-black' },
+            { name: 'TV ONE', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h40/01.m3u8', color: 'from-red-600 to-black' },
+            { name: 'KOMPAS TV', url: 'https://op-group1-swiftservehd-1.dens.tv/s/s104/index.m3u8', color: 'from-blue-800 to-cyan-900' },
+            { name: 'KOMPAS TV', url: 'https://op-group1-swiftservehd-1.dens.tv/s/s104/02.m3u8', color: 'from-blue-800 to-cyan-900' },
+            { name: 'KOMPAS TV', url: 'https://op-group1-swiftservehd-1.dens.tv/s/s104/01.m3u8', color: 'from-blue-800 to-cyan-900' },
+            { name: 'MDTV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h223/index.m3u8?app_type=web&userid=lite&chname=MDTV', color: 'from-pink-600 to-purple-800' },
+            { name: 'MDTV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h223/02.m3u8', color: 'from-pink-600 to-purple-800' },
+            { name: 'TVRI', url: 'https://ott-balancer.tvri.go.id/live/eds/Nasional/hls/Nasional.m3u8', color: 'from-blue-900 to-black' },
+            { name: 'TVRI', url: 'https://ott-balancer.tvri.go.id/live/eds/Nasional/hls/Nasional-avc1_250000=10000-mp4a_64000_eng=20003.m3u8', color: 'from-blue-900 to-black' },
+            { name: 'TVRI World', url: 'https://ott-balancer.tvri.go.id/live/eds/TVRIWorld/hls/TVRIWorld.m3u8', color: 'from-slate-700 to-black' },
+            { name: 'METRO TV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h12/index.m3u8', color: 'from-blue-900 to-yellow-600' },
+            { name: 'METRO TV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h12/02.m3u8', color: 'from-blue-900 to-yellow-600' },
+            { name: 'METRO TV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h12/01.m3u8', color: 'from-blue-900 to-yellow-600' },
+            { name: 'BTV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h129/S4/mnf.m3u8', color: 'from-orange-500 to-red-700' },
+            { name: 'SCTV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h217/index.m3u8', color: 'from-sky-400 to-blue-600' },
+            { name: 'SCTV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h217/02.m3u8', color: 'from-sky-400 to-blue-600' },
+            { name: 'MDJI', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h207/index.m3u8', color: 'from-green-600 to-emerald-900' },
+            { name: 'MDJI', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h207/02.m3u8', color: 'from-green-600 to-emerald-900' },
+            { name: 'INDOSIAR', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h235/index.m3u8', color: 'from-blue-600 via-white/10 to-red-600' },
+            { name: 'INDOSIAR', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h235/02.m3u8', color: 'from-blue-600 via-white/10 to-red-600' },
+            { name: 'EBS KIDS', url: 'https://ebsonair.ebs.co.kr/plus3familypc/familypc1m/playlist.m3u8', color: 'from-green-400 to-blue-500' },
+            { name: 'CNN TV', url: 'https://live.cnnindonesia.com/livecnn/smil:cnntv.smil/chunklist_w672934803_b384000_sleng.m3u8', color: 'from-red-600 via-red-800 to-black' },
+            { name: 'SPORT TV', url: 'https://cdn3.wowza.com/5/ZWQ1K2NYTmpFbGsr/BEK-WOWZA-1/smil:BEKPRIMEW.smil/playlist.m3u8', color: 'from-green-500 via-emerald-700 to-teal-900' }
+        ];
+
+        let CHANNELS = [];
+        let hlsInstance = null;
+
+        function initApp() {
+            const counts = {};
+            CHANNELS = RAW_CHANNELS.map((ch, index) => {
+                counts[ch.name] = (counts[ch.name] || 0) + 1;
+                const finalName = counts[ch.name] > 1 ? `${ch.name} ${counts[ch.name]}` : ch.name;
+                return {
+                    ...ch,
+                    id: index,
+                    displayName: finalName,
+                    match: `${Math.floor(Math.random() * 15) + 85}%`,
+                    rating: (Math.random() * 1.5 + 8).toFixed(1)
+                };
+            });
+            showPage('home');
+            lucide.createIcons();
+        }
+
+        function createBannerHTML(ch, size = "small") {
+            const isLarge = size === "large";
+            return `
+                <div class="w-full h-full bg-gradient-to-br ${ch.color} flex items-center justify-center relative overflow-hidden group-hover:scale-105 transition-all duration-1000">
+                    <div class="absolute inset-0 flex flex-wrap gap-2 items-center justify-center opacity-[0.03] pointer-events-none rotate-[-15deg] scale-150">
+                        ${Array(10).fill(`<span class="text-xl font-black uppercase tracking-tighter">${ch.name}</span>`).join('')}
+                    </div>
+                    <div class="relative z-10 p-4 text-center">
+                        <span class="${isLarge ? 'text-4xl md:text-7xl' : 'text-xl md:text-2xl'} font-[1000] text-white tracking-[-0.05em] uppercase italic leading-none drop-shadow-lg">
+                            ${ch.displayName}
+                        </span>
+                    </div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/10"></div>
+                </div>
+            `;
+        }
+
+        function showPage(pageName, channelId = null) {
+            const container = document.getElementById('main-content');
+            const navHome = document.getElementById('nav-home');
+            const navDev = document.getElementById('nav-dev');
+
+            navHome.classList.remove('text-blue-500');
+            navHome.classList.add('text-gray-500');
+            navDev.classList.remove('text-blue-500');
+            navDev.classList.add('text-gray-500');
+
+            if (hlsInstance) {
+                hlsInstance.destroy();
+                hlsInstance = null;
+            }
+
+            if (pageName === 'home') {
+                navHome.classList.add('text-blue-500');
+                const firstCh = CHANNELS[0];
+                container.innerHTML = `
+                    <div class="pt-14 animate-in">
+                        <section class="relative h-[65vh] flex flex-col justify-end p-6 md:p-12 overflow-hidden">
+                            <div class="absolute inset-0 z-0">
+                                ${createBannerHTML(firstCh, "large")}
+                            </div>
+                            <div class="absolute inset-0 bg-gradient-to-t from-[#010101] via-transparent to-transparent"></div>
+                            <div class="absolute inset-0 bg-gradient-to-r from-[#010101]/80 to-transparent"></div>
+                            <div class="relative z-10 max-w-2xl space-y-4">
+                                <h2 class="text-4xl md:text-7xl font-[1000] leading-none tracking-tighter uppercase italic">${firstCh.displayName}</h2>
+                                <div class="flex items-center gap-4 text-xs font-bold text-gray-400">
+                                    <span class="text-green-500 font-black">${firstCh.match} Match</span>
+                                    <span class="bg-white/10 px-2 py-0.5 rounded text-[10px] uppercase font-black tracking-widest">Ultra HD</span>
+                                </div>
+                                <button onclick="showPage('watch', 0)" class="bg-white text-black px-8 py-3 rounded-xl font-black text-xs flex items-center gap-2 hover:bg-blue-600 hover:text-white active:scale-95 transition-all uppercase tracking-widest shadow-xl w-fit">
+                                    <i data-lucide="play" class="w-4 h-4 fill-current"></i> Tonton
+                                </button>
+                            </div>
+                        </section>
+                        <section class="px-6 md:px-12 mt-10 space-y-6">
+                            <h3 class="text-xs font-black uppercase tracking-[0.4em] flex items-center gap-2 italic text-gray-500">
+                                SEMUA SALURAN <i data-lucide="chevron-right" class="w-4 h-4 text-blue-500"></i>
+                            </h3>
+                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+                                ${CHANNELS.map(ch => `
+                                    <div onclick="showPage('watch', ${ch.id})" class="group cursor-pointer rounded-2xl overflow-hidden bg-[#080808] border border-white/[0.05] hover:border-blue-600 transition-all duration-300 shadow-xl active:scale-95 channel-card">
+                                        <div class="aspect-video relative overflow-hidden bg-black">
+                                            ${createBannerHTML(ch)}
+                                            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/40">
+                                                <i data-lucide="play" class="w-6 h-6 fill-white text-white"></i>
+                                            </div>
+                                        </div>
+                                        <div class="p-4 space-y-1">
+                                            <h4 class="font-black text-[10px] md:text-[11px] uppercase truncate tracking-widest">${ch.displayName}</h4>
+                                            <span class="text-[9px] text-green-500 font-black italic">${ch.match} Match</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </section>
+                    </div>
+                `;
+            } else if (pageName === 'watch') {
+                navHome.classList.add('text-blue-500');
+                const ch = CHANNELS[channelId];
+                const others = CHANNELS.filter(c => c.id !== ch.id);
+                const recs = others.slice(0, 4);
+                const more = others.slice(4);
+
+                container.innerHTML = `
+                    <div class="pt-14 animate-in">
+                        <div class="sticky-player w-full bg-black shadow-2xl">
+                            <div class="relative w-full aspect-video bg-black overflow-hidden group">
+                                <video id="video-player" class="w-full h-full object-contain" playsinline autoplay></video>
+                            </div>
+                        </div>
+                        <div class="max-w-[1400px] mx-auto px-6 md:px-12 mt-8 pb-20">
+                            <button onclick="showPage('home')" class="flex items-center gap-2 text-gray-500 hover:text-white mb-6 text-[10px] font-black uppercase tracking-[0.4em] transition-all bg-white/5 px-4 py-2 rounded-full w-fit active:scale-90">
+                                <i data-lucide="arrow-left" class="w-3 h-3"></i> Beranda
+                            </button>
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
+                                <div class="lg:col-span-2 space-y-10">
+                                    <div class="space-y-4">
+                                        <h2 class="text-3xl md:text-6xl font-[1000] tracking-tighter uppercase italic">${ch.displayName}</h2>
+                                        <div class="flex flex-wrap items-center gap-4 md:gap-6 text-[10px] md:text-xs font-black tracking-widest italic text-gray-400">
+                                            <span class="text-green-500">SIARAN AKTIF ${ch.match}</span>
+                                            <span class="flex items-center gap-1 text-yellow-500"><i data-lucide="star" class="w-3 h-3 fill-current"></i> ${ch.rating}</span>
+                                            <span class="border border-white/20 px-2 py-0.5 rounded text-[9px] bg-white/5 font-black uppercase">Original HD</span>
+                                        </div>
+                                        <div class="flex flex-wrap items-center gap-3 pt-3">
+                                            <button onclick="toggleFullscreen()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-full font-[900] text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-[0_0_15px_rgba(37,99,235,0.4)]">
+                                                <i data-lucide="maximize-2" class="w-4 h-4"></i> Layar Penuh
+                                            </button>
+                                            <button onclick="togglePiP()" class="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-full font-[900] text-[10px] uppercase tracking-widest transition-all active:scale-95 border border-white/10 shadow-lg">
+                                                <i data-lucide="external-link" class="w-4 h-4"></i> PiP Mode
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-6 pt-6 border-t border-white/5">
+                                        <h3 class="text-[10px] font-black uppercase tracking-[0.4em] text-blue-500 italic">Pilihan Terpopuler</h3>
+                                        <div class="grid grid-cols-1 gap-4">
+                                            ${recs.map(r => `
+                                                <div onclick="showPage('watch', ${r.id})" class="flex gap-4 bg-[#080808] p-3 rounded-2xl cursor-pointer hover:bg-white/5 border border-transparent hover:border-blue-500/30 transition-all group active:scale-95">
+                                                    <div class="w-24 md:w-32 aspect-video overflow-hidden rounded-xl shrink-0">
+                                                        ${createBannerHTML(r)}
+                                                    </div>
+                                                    <div class="flex flex-col justify-center overflow-hidden">
+                                                        <h4 class="text-[10px] md:text-xs font-black uppercase tracking-widest truncate group-hover:text-blue-500">${r.displayName}</h4>
+                                                        <span class="text-[9px] text-gray-600 font-bold uppercase italic mt-1">${r.match} Match</span>
+                                                    </div>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="hidden lg:block space-y-6 bg-white/5 p-6 rounded-[2rem] border border-white/5">
+                                    <h4 class="text-[10px] font-black uppercase tracking-widest text-gray-500">Status Jaringan</h4>
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_#22c55e]"></div>
+                                        <span class="text-[11px] font-black">Connected (Fast Stream)</span>
+                                    </div>
+                                    <p class="text-[10px] leading-relaxed text-gray-500 uppercase font-medium">
+                                        Sistem adaptif Hidz menyajikan streaming tanpa buffer untuk kualitas Ultra HD.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="mt-16 space-y-6">
+                                <h3 class="text-[10px] font-black uppercase tracking-[0.5em] text-gray-600 italic">Jelajahi Saluran Lainnya</h3>
+                                <div class="flex overflow-x-auto gap-4 md:gap-6 pb-10 no-scrollbar scroll-smooth">
+                                    ${more.map(m => `
+                                        <div onclick="showPage('watch', ${m.id})" class="flex-none w-48 md:w-56 group cursor-pointer transition-all active:scale-90">
+                                            <div class="aspect-video relative overflow-hidden rounded-2xl border border-white/5 group-hover:border-blue-600 transition-all bg-black shadow-lg">
+                                                ${createBannerHTML(m)}
+                                                <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+                                                    <i data-lucide="play" class="w-6 h-6 fill-white text-white"></i>
+                                                </div>
+                                            </div>
+                                            <h4 class="mt-4 font-black text-[9px] md:text-[10px] uppercase tracking-widest text-gray-500 group-hover:text-white transition-colors italic truncate">${m.displayName}</h4>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                const video = document.getElementById('video-player');
+                if (Hls.isSupported()) {
+                    hlsInstance = new Hls();
+                    hlsInstance.loadSource(ch.url);
+                    hlsInstance.attachMedia(video);
+                    hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
+                        video.play().catch(function(e) { console.log("Auto-play blocked"); });
+                    });
+                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                    video.src = ch.url;
+                    video.addEventListener('loadedmetadata', function() {
+                        video.play().catch(function(e) { console.log("Auto-play blocked"); });
+                    });
+                }
+
+                video.addEventListener('leavepictureinpicture', () => {
+                    setTimeout(() => {
+                        if (video.paused) {
+                            video.play().catch(e => console.log("Gagal memutar ulang setelah PiP", e));
+                        }
+                    }, 100);
+                });
+
+            } else if (pageName === 'dev') {
+                navDev.classList.add('text-blue-500');
+                container.innerHTML = `
+                    <div class="pt-32 px-6 max-w-4xl mx-auto text-center animate-in">
+                        <h2 class="text-5xl md:text-8xl font-[1000] uppercase tracking-tighter mb-4 italic drop-shadow-lg">
+                            <span class="rgb-text animate-gradient-x">Hidz</span> TV
+                        </h2>
+                        <p class="text-blue-500 text-xs font-black uppercase tracking-[0.8em] mb-12 italic">Developer: Hidz</p>
+                        <div class="max-w-xl mx-auto bg-white/5 p-10 rounded-[2.5rem] border border-white/10 shadow-2xl backdrop-blur-xl">
+                            <p class="text-gray-400 text-lg md:text-xl leading-relaxed italic font-medium">
+                                "Menyajikan pengalaman menonton televisi digital yang lebih rapi, ringan, dan lengkap dengan teknologi streaming terbaru."
+                            </p>
+                        </div>
+                        <button onclick="showPage('home')" class="mt-16 bg-white text-black px-16 py-4 rounded-2xl font-[1000] text-[10px] uppercase tracking-[0.5em] hover:bg-blue-600 hover:text-white transition-all shadow-xl active:scale-90">
+                            KEMBALI
+                        </button>
+                    </div>
+                `;
+            }
+
+            lucide.createIcons();
+            window.scrollTo(0, 0);
+        }
+
+        async function togglePiP() {
+            const video = document.getElementById('video-player');
+            try {
+                if (video !== document.pictureInPictureElement) {
+                    await video.requestPictureInPicture();
+                } else {
+                    await document.exitPictureInPicture();
+                }
+            } catch (error) {
+                console.error("Gagal mode PiP:", error);
+            }
+        }
+
+        function toggleFullscreen() {
+            const player = document.getElementById('video-player');
+            if (player.requestFullscreen) player.requestFullscreen();
+            else if (player.webkitRequestFullscreen) player.webkitRequestFullscreen();
+            if (screen.orientation && screen.orientation.lock) {
+                screen.orientation.lock('landscape').catch(() => {});
+            }
+        }
+
+        window.onload = initApp;
+    </script>
+</body>
+</html>
