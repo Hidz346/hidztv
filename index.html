@@ -304,8 +304,8 @@
     </nav>
 
     <script>
-        // === KONFIGURASI SALURAN ===
-        const RAW_CHANNELS = [
+        // === KONFIGURASI SALURAN NASIONAL (INDONESIA) ===
+        const RAW_NATIONAL = [
             { name: 'RTV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h10/index.m3u8', color: 'from-purple-600 to-indigo-900' },
             { name: 'RTV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h10/02.m3u8', color: 'from-purple-600 to-indigo-900' },
             { name: 'RTV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h10/01.m3u8', color: 'from-purple-600 to-indigo-900' },
@@ -323,7 +323,6 @@
             { name: 'MDTV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h223/02.m3u8', color: 'from-pink-600 to-purple-800' },
             { name: 'TVRI', url: 'https://ott-balancer.tvri.go.id/live/eds/Nasional/hls/Nasional.m3u8', color: 'from-blue-900 to-black' },
             { name: 'TVRI', url: 'https://ott-balancer.tvri.go.id/live/eds/Nasional/hls/Nasional-avc1_250000=10000-mp4a_64000_eng=20003.m3u8', color: 'from-blue-900 to-black' },
-            { name: 'TVRI World', url: 'https://ott-balancer.tvri.go.id/live/eds/TVRIWorld/hls/TVRIWorld.m3u8', color: 'from-slate-700 to-black' },
             { name: 'METRO TV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h12/index.m3u8', color: 'from-blue-900 to-yellow-600' },
             { name: 'METRO TV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h12/02.m3u8', color: 'from-blue-900 to-yellow-600' },
             { name: 'METRO TV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h12/01.m3u8', color: 'from-blue-900 to-yellow-600' },
@@ -334,27 +333,59 @@
             { name: 'MDJI', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h207/02.m3u8', color: 'from-green-600 to-emerald-900' },
             { name: 'INDOSIAR', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h235/index.m3u8', color: 'from-blue-600 via-white/10 to-red-600' },
             { name: 'INDOSIAR', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h235/02.m3u8', color: 'from-blue-600 via-white/10 to-red-600' },
-            { name: 'EBS KIDS', url: 'https://ebsonair.ebs.co.kr/plus3familypc/familypc1m/playlist.m3u8', color: 'from-green-400 to-blue-500' },
             { name: 'CNN TV', url: 'https://live.cnnindonesia.com/livecnn/smil:cnntv.smil/chunklist_w672934803_b384000_sleng.m3u8', color: 'from-red-600 via-red-800 to-black' },
             { name: 'SPORT TV', url: 'https://cdn3.wowza.com/5/ZWQ1K2NYTmpFbGsr/BEK-WOWZA-1/smil:BEKPRIMEW.smil/playlist.m3u8', color: 'from-green-500 via-emerald-700 to-teal-900' }
         ];
 
-        let CHANNELS = [];
-        let hlsInstance = null;
+        // === KONFIGURASI SALURAN INTERNASIONAL ===
+        const RAW_INTERNATIONAL = [
+            { name: 'CGTN', url: 'https://news.cgtn.com/resource/live/english/cgtn-news.m3u8', color: 'from-red-700 to-red-950', region: 'China', language: 'English', flag: '🇨🇳' },
+            { name: 'DW English', url: 'https://dwamdstream102.akamaized.net/hls/live/2015525/dwstream102/index.m3u8', color: 'from-zinc-700 to-red-900', region: 'Germany', language: 'English', flag: '🇩🇪' },
+            { name: 'DW Arabic', url: 'https://dwamdstream104.akamaized.net/hls/live/2015530/dwstream104/index.m3u8', color: 'from-zinc-600 to-yellow-900', region: 'Germany', language: 'العربية', flag: '🇩🇪' },
+            { name: 'TVRI World', url: 'https://ott-balancer.tvri.go.id/live/eds/TVRIWorld/hls/TVRIWorld.m3u8', color: 'from-slate-700 to-black', region: 'Indonesia', language: 'English', flag: '🇮🇩' },
+            { name: 'EBS KIDS', url: 'https://ebsonair.ebs.co.kr/plus3familypc/familypc1m/playlist.m3u8', color: 'from-green-400 to-blue-500', region: 'Korea', language: 'Korean', flag: '🇰🇷' }
+        ];
+
+        let NATIONAL_CHANNELS = [];
+        let INTL_CHANNELS     = [];
+        let ALL_CHANNELS      = [];
+        let CHANNELS          = []; // alias — tetap kompatibel dengan watch page
+        let hlsInstance       = null;
 
         function initApp() {
-            const counts = {};
-            CHANNELS = RAW_CHANNELS.map((ch, index) => {
-                counts[ch.name] = (counts[ch.name] || 0) + 1;
-                const finalName = counts[ch.name] > 1 ? `${ch.name} ${counts[ch.name]}` : ch.name;
+            // Bangun NATIONAL_CHANNELS
+            const natCounts = {};
+            NATIONAL_CHANNELS = RAW_NATIONAL.map((ch, index) => {
+                natCounts[ch.name] = (natCounts[ch.name] || 0) + 1;
+                const finalName = natCounts[ch.name] > 1 ? `${ch.name} ${natCounts[ch.name]}` : ch.name;
                 return {
                     ...ch,
                     id: index,
                     displayName: finalName,
                     match: `${Math.floor(Math.random() * 15) + 85}%`,
-                    rating: (Math.random() * 1.5 + 8).toFixed(1)
+                    rating: (Math.random() * 1.5 + 8).toFixed(1),
+                    type: 'national'
                 };
             });
+
+            // Bangun INTL_CHANNELS — ID lanjut dari national
+            const intlCounts = {};
+            INTL_CHANNELS = RAW_INTERNATIONAL.map((ch, index) => {
+                intlCounts[ch.name] = (intlCounts[ch.name] || 0) + 1;
+                const finalName = intlCounts[ch.name] > 1 ? `${ch.name} ${intlCounts[ch.name]}` : ch.name;
+                return {
+                    ...ch,
+                    id: NATIONAL_CHANNELS.length + index,
+                    displayName: finalName,
+                    match: `${Math.floor(Math.random() * 15) + 85}%`,
+                    rating: (Math.random() * 1.5 + 8).toFixed(1),
+                    type: 'international'
+                };
+            });
+
+            ALL_CHANNELS = [...NATIONAL_CHANNELS, ...INTL_CHANNELS];
+            CHANNELS     = ALL_CHANNELS;
+
             showPage('home');
             lucide.createIcons();
         }
@@ -390,7 +421,7 @@
             navDev.style.color   = '#4b5563';
             navDev.style.filter  = '';
             // Activate
-            if (page === 'home' || page === 'watch') {
+            if (page === 'home' || page === 'national' || page === 'international' || page === 'watch') {
                 navHome.style.color  = 'var(--pink)';
                 navHome.style.filter = 'drop-shadow(0 0 6px var(--pink))';
             } else if (page === 'dev') {
@@ -413,7 +444,6 @@
                HOME PAGE
             ════════════════════════ */
             if (pageName === 'home') {
-                const firstCh = CHANNELS[0];
                 container.innerHTML = `
                     <div class="pt-14 animate-in">
 
@@ -424,31 +454,190 @@
                             </div>
                         </div>
 
+                        <!-- HERO SECTION (Brand Hero) -->
+                        <section class="relative overflow-hidden" style="height:48vh;border-bottom:2px solid rgba(255,255,255,0.08)">
+                            <div class="absolute inset-0 z-0" style="background:linear-gradient(135deg,#1a001a 0%,#0a0015 30%,#001020 70%,#050508 100%)">
+                                <div class="absolute inset-0" style="background-image:linear-gradient(rgba(255,45,120,0.07) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.07) 1px,transparent 1px);background-size:36px 36px"></div>
+                                <div class="absolute" style="width:380px;height:380px;background:radial-gradient(circle,rgba(255,45,120,0.16) 0%,transparent 70%);top:-100px;left:-80px;pointer-events:none"></div>
+                                <div class="absolute" style="width:300px;height:300px;background:radial-gradient(circle,rgba(0,229,255,0.11) 0%,transparent 70%);bottom:-80px;right:-60px;pointer-events:none"></div>
+                            </div>
+                            <div class="absolute inset-0" style="background:linear-gradient(to top,var(--bg) 0%,rgba(5,5,8,0.3) 70%,transparent 100%)"></div>
+                            <div class="absolute top-4 right-4 z-10 text-right" style="font-family:'VT323',monospace;font-size:13px">
+                                <div class="neon-cyan tracking-widest mb-1">[ LIVE BROADCAST ]</div>
+                                <div class="neon-lime">★★★★★</div>
+                            </div>
+                            <div class="absolute inset-0 z-10 flex flex-col justify-end p-5 md:p-10">
+                                <div class="inline-flex items-center gap-2 mb-3 px-3 py-1"
+                                     style="background:var(--pink);border:2px solid white;box-shadow:3px 3px 0 white;width:fit-content;font-family:'VT323',monospace;font-size:14px;letter-spacing:0.25em">
+                                    <div class="live-dot" style="width:6px;height:6px;animation-duration:1.2s"></div>
+                                    STREAMING LIVE NOW
+                                </div>
+                                <h1 class="glitch" style="font-family:'Bebas Neue',sans-serif;font-size:clamp(3.5rem,13vw,7.5rem);letter-spacing:0.06em;line-height:1;text-shadow:5px 5px 0 var(--pink),10px 10px 0 rgba(0,229,255,0.2)">
+                                    HIDZ TV
+                                </h1>
+                                <p style="font-family:'Space Mono',monospace;font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:0.12em;margin-top:8px;text-transform:uppercase">
+                                    Pilih kategori siaran favoritmu ↓
+                                </p>
+                            </div>
+                        </section>
+
+                        <!-- KATEGORI PILIHAN -->
+                        <section class="px-4 md:px-10 mt-10 pb-10">
+                            <div class="flex items-center gap-3 mb-8">
+                                <div class="section-accent-pink"></div>
+                                <h3 style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:0.1em">PILIH KATEGORI SIARAN</h3>
+                                <span class="neon-cyan ml-2" style="font-family:'VT323',monospace;font-size:15px">${ALL_CHANNELS.length} TOTAL CH</span>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                                <!-- ══ CARD: TV NASIONAL ══ -->
+                                <div onclick="showPage('national')"
+                                     class="cursor-pointer relative overflow-hidden"
+                                     style="border:3px solid white;box-shadow:7px 7px 0 var(--pink);min-height:300px;transition:transform 0.12s ease,box-shadow 0.12s ease"
+                                     onmouseenter="this.style.transform='translate(-3px,-3px)';this.style.boxShadow='10px 10px 0 var(--pink)'"
+                                     onmouseleave="this.style.transform='';this.style.boxShadow='7px 7px 0 var(--pink)'"
+                                     onmousedown="this.style.transform='translate(3px,3px)';this.style.boxShadow='2px 2px 0 var(--pink)'"
+                                     onmouseup="this.style.transform='translate(-3px,-3px)';this.style.boxShadow='10px 10px 0 var(--pink)'">
+                                    <!-- Background -->
+                                    <div class="absolute inset-0" style="background:linear-gradient(135deg,#CE1126 0%,#8B0010 40%,#2d000a 100%)">
+                                        <div class="absolute inset-0" style="background-image:linear-gradient(rgba(255,255,255,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.06) 1px,transparent 1px);background-size:20px 20px;opacity:0.55"></div>
+                                        <div class="absolute inset-0 flex flex-wrap gap-3 items-center justify-center pointer-events-none rotate-[-12deg] scale-150" style="opacity:0.022">
+                                            ${Array(10).fill('<span style="font-family:\'Bebas Neue\',sans-serif;font-size:2rem;letter-spacing:0.12em">INDONESIA</span>').join('')}
+                                        </div>
+                                        <div class="absolute" style="width:240px;height:240px;background:radial-gradient(circle,rgba(255,255,255,0.07) 0%,transparent 70%);top:-60px;right:-40px;pointer-events:none"></div>
+                                    </div>
+                                    <!-- Content -->
+                                    <div class="relative z-10 p-7 flex flex-col justify-between" style="min-height:300px">
+                                        <!-- Logo top -->
+                                        <div class="flex items-center gap-4">
+                                            <div style="width:58px;height:58px;background:white;border:3px solid black;box-shadow:3px 3px 0 black;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                                <i data-lucide="tv" style="width:28px;height:28px;color:black"></i>
+                                            </div>
+                                            <div>
+                                                <div style="font-size:2.2rem;line-height:1">🇮🇩</div>
+                                                <div style="font-family:'VT323',monospace;font-size:12px;letter-spacing:0.3em;color:rgba(255,255,255,0.6);margin-top:2px">INDONESIA</div>
+                                            </div>
+                                        </div>
+                                        <!-- Title -->
+                                        <div>
+                                            <div style="font-family:'VT323',monospace;color:rgba(255,255,255,0.3);letter-spacing:0.3em;font-size:12px;margin-bottom:2px">// KATEGORI 01</div>
+                                            <h2 style="font-family:'Bebas Neue',sans-serif;font-size:clamp(2.8rem,7vw,4.5rem);letter-spacing:0.06em;line-height:1;text-shadow:4px 4px 0 rgba(0,0,0,0.5)">
+                                                TV NASIONAL
+                                            </h2>
+                                            <p style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(255,255,255,0.5);letter-spacing:0.1em;margin-top:6px;text-transform:uppercase">
+                                                Siaran Televisi Indonesia
+                                            </p>
+                                        </div>
+                                        <!-- Stats + CTA -->
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-2" style="font-family:'VT323',monospace;font-size:19px;color:var(--lime);text-shadow:0 0 8px var(--lime)">
+                                                <div class="live-dot" style="width:7px;height:7px"></div>
+                                                ${NATIONAL_CHANNELS.length} CH LIVE
+                                            </div>
+                                            <span class="btn btn-white" style="box-shadow:4px 4px 0 #000;pointer-events:none">
+                                                <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i> PILIH
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- ══ CARD: TV INTERNASIONAL ══ -->
+                                <div onclick="showPage('international')"
+                                     class="cursor-pointer relative overflow-hidden"
+                                     style="border:3px solid white;box-shadow:7px 7px 0 var(--cyan);min-height:300px;transition:transform 0.12s ease,box-shadow 0.12s ease"
+                                     onmouseenter="this.style.transform='translate(-3px,-3px)';this.style.boxShadow='10px 10px 0 var(--cyan)'"
+                                     onmouseleave="this.style.transform='';this.style.boxShadow='7px 7px 0 var(--cyan)'"
+                                     onmousedown="this.style.transform='translate(3px,3px)';this.style.boxShadow='2px 2px 0 var(--cyan)'"
+                                     onmouseup="this.style.transform='translate(-3px,-3px)';this.style.boxShadow='10px 10px 0 var(--cyan)'">
+                                    <!-- Background -->
+                                    <div class="absolute inset-0" style="background:linear-gradient(135deg,#003c6e 0%,#001535 40%,#000b1e 100%)">
+                                        <div class="absolute inset-0" style="background-image:linear-gradient(rgba(0,229,255,0.07) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.07) 1px,transparent 1px);background-size:20px 20px;opacity:0.55"></div>
+                                        <div class="absolute inset-0 flex flex-wrap gap-3 items-center justify-center pointer-events-none rotate-[-12deg] scale-150" style="opacity:0.022">
+                                            ${Array(10).fill('<span style="font-family:\'Bebas Neue\',sans-serif;font-size:2rem;letter-spacing:0.12em">WORLD</span>').join('')}
+                                        </div>
+                                        <div class="absolute" style="width:240px;height:240px;background:radial-gradient(circle,rgba(0,229,255,0.09) 0%,transparent 70%);top:-60px;right:-40px;pointer-events:none"></div>
+                                    </div>
+                                    <!-- Content -->
+                                    <div class="relative z-10 p-7 flex flex-col justify-between" style="min-height:300px">
+                                        <!-- Logo top -->
+                                        <div class="flex items-center gap-4">
+                                            <div style="width:58px;height:58px;background:var(--cyan);border:3px solid black;box-shadow:3px 3px 0 black;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                                <i data-lucide="globe" style="width:28px;height:28px;color:black"></i>
+                                            </div>
+                                            <div>
+                                                <div style="font-size:1.6rem;line-height:1;letter-spacing:0.08em">🇨🇳 🇩🇪 🇰🇷</div>
+                                                <div style="font-family:'VT323',monospace;font-size:12px;letter-spacing:0.3em;color:rgba(255,255,255,0.6);margin-top:2px">WORLDWIDE</div>
+                                            </div>
+                                        </div>
+                                        <!-- Title -->
+                                        <div>
+                                            <div style="font-family:'VT323',monospace;color:rgba(0,229,255,0.35);letter-spacing:0.3em;font-size:12px;margin-bottom:2px">// KATEGORI 02</div>
+                                            <h2 class="neon-cyan" style="font-family:'Bebas Neue',sans-serif;font-size:clamp(2.2rem,5.5vw,3.8rem);letter-spacing:0.06em;line-height:1">
+                                                TV INTERNASIONAL
+                                            </h2>
+                                            <p style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(255,255,255,0.5);letter-spacing:0.1em;margin-top:6px;text-transform:uppercase">
+                                                World Television Channels
+                                            </p>
+                                        </div>
+                                        <!-- Stats + CTA -->
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-2" style="font-family:'VT323',monospace;font-size:19px;color:var(--cyan);text-shadow:0 0 8px var(--cyan)">
+                                                <div style="width:7px;height:7px;background:var(--cyan);border-radius:50%;box-shadow:0 0 6px var(--cyan),0 0 14px rgba(0,229,255,0.5);animation:live-pulse 1.5s ease-in-out infinite;display:inline-block;flex-shrink:0"></div>
+                                                ${INTL_CHANNELS.length} CH LIVE
+                                            </div>
+                                            <span class="btn" style="background:transparent;border:2px solid var(--cyan);color:var(--cyan);box-shadow:4px 4px 0 var(--cyan);pointer-events:none">
+                                                <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i> PILIH
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </section>
+
+                        <!-- Y2K Footer -->
+                        <div class="mt-4 mb-8 text-center" style="font-family:'VT323',monospace;font-size:14px;opacity:0.25;letter-spacing:0.5em">
+                            <div>✦ ✦ ✦ &nbsp; HIDZ TV &nbsp; ✦ ✦ ✦</div>
+                            <div class="neon-cyan mt-1">POWERED BY HIDZ FORUM</div>
+                        </div>
+                    </div>
+                `;
+
+            /* ════════════════════════
+               TV NASIONAL PAGE
+            ════════════════════════ */
+            } else if (pageName === 'national') {
+                const channels = NATIONAL_CHANNELS;
+                const firstCh  = channels[0];
+                container.innerHTML = `
+                    <div class="pt-14 animate-in">
+
+                        <!-- Y2K TICKER BAR -->
+                        <div class="ticker-bar">
+                            <div class="marquee-inner" style="font-family:'VT323',monospace;font-size:15px;color:white;letter-spacing:0.3em;padding:0 16px">
+                                ✦ TV NASIONAL — SIARAN INDONESIA LIVE &nbsp;✦&nbsp; HD QUALITY &nbsp;✦&nbsp; ${NATIONAL_CHANNELS.length} SALURAN TERSEDIA &nbsp;✦&nbsp; SELAMAT MENONTON &nbsp;✦&nbsp; NO BUFFER TECHNOLOGY &nbsp;✦&nbsp;
+                            </div>
+                        </div>
+
                         <!-- HERO SECTION -->
                         <section class="relative overflow-hidden" style="height:65vh;border-bottom:2px solid rgba(255,255,255,0.08)">
                             <div class="absolute inset-0 z-0">${createBannerHTML(firstCh, "large")}</div>
                             <div class="absolute inset-0" style="background:linear-gradient(to top, var(--bg) 0%, rgba(5,5,8,0.55) 50%, transparent 100%)"></div>
                             <div class="absolute inset-0" style="background:linear-gradient(to right, rgba(5,5,8,0.85) 0%, transparent 65%)"></div>
-
-                            <!-- Top-right Y2K tag -->
                             <div class="absolute top-4 right-4 z-10 text-right" style="font-family:'VT323',monospace;font-size:13px">
-                                <div class="neon-cyan tracking-widest mb-1">[ LIVE BROADCAST ]</div>
+                                <div class="neon-pink tracking-widest mb-1">🇮🇩 TV NASIONAL</div>
                                 <div class="neon-lime">★★★★★</div>
                             </div>
-
-                            <!-- Hero content -->
                             <div class="absolute inset-0 z-10 flex flex-col justify-end p-5 md:p-10">
-                                <!-- LIVE pill -->
                                 <div class="inline-flex items-center gap-2 mb-3 px-3 py-1"
                                      style="background:var(--pink);border:2px solid white;box-shadow:3px 3px 0 white;width:fit-content;font-family:'VT323',monospace;font-size:14px;letter-spacing:0.25em">
                                     <div class="live-dot" style="width:6px;height:6px;animation-duration:1.2s"></div>
                                     SEDANG TAYANG
                                 </div>
-
                                 <h2 style="font-family:'Bebas Neue',sans-serif;font-size:clamp(2.8rem,9vw,5.5rem);letter-spacing:0.06em;line-height:1;text-shadow:4px 4px 0 var(--pink);max-width:700px">
                                     ${firstCh.displayName}
                                 </h2>
-
                                 <div class="flex items-center gap-3 mt-3 mb-5" style="font-family:'VT323',monospace;font-size:16px">
                                     <span class="neon-lime flex items-center gap-1.5">
                                         <div class="live-dot" style="width:5px;height:5px"></div>
@@ -457,34 +646,31 @@
                                     <span class="text-white/30">|</span>
                                     <span class="px-2 py-0.5 neon-cyan" style="border:1px solid rgba(0,229,255,0.3);font-size:13px">ULTRA HD</span>
                                 </div>
-
-                                <button onclick="showPage('watch', 0)" class="btn btn-white" style="width:fit-content">
+                                <button onclick="showPage('watch', ${firstCh.id})" class="btn btn-white" style="width:fit-content">
                                     <i data-lucide="play" class="w-4 h-4 fill-current"></i>
                                     TONTON SEKARANG
                                 </button>
                             </div>
                         </section>
 
-                        <!-- CHANNEL GRID SECTION -->
+                        <!-- CHANNEL GRID -->
                         <section class="px-4 md:px-10 mt-8 space-y-5">
-                            <!-- Section title -->
+                            <button onclick="showPage('home')" class="btn btn-dark mb-2">
+                                <i data-lucide="arrow-left" class="w-3 h-3"></i> MENU UTAMA
+                            </button>
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-3">
                                     <div class="section-accent-pink"></div>
-                                    <h3 style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:0.1em">SEMUA SALURAN</h3>
+                                    <h3 style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:0.1em">🇮🇩 SEMUA SALURAN NASIONAL</h3>
                                 </div>
-                                <span class="neon-cyan" style="font-family:'VT323',monospace;font-size:15px">${CHANNELS.length} CH LIVE</span>
+                                <span class="neon-cyan" style="font-family:'VT323',monospace;font-size:15px">${NATIONAL_CHANNELS.length} CH LIVE</span>
                             </div>
-
-                            <!-- Grid -->
                             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
-                                ${CHANNELS.map(ch => `
+                                ${NATIONAL_CHANNELS.map(ch => `
                                     <div onclick="showPage('watch', ${ch.id})"
                                          class="channel-card group cursor-pointer overflow-hidden">
-                                        <!-- Thumbnail -->
                                         <div class="aspect-video relative overflow-hidden bg-black">
                                             ${createBannerHTML(ch)}
-                                            <!-- Play overlay -->
                                             <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200"
                                                  style="background:rgba(255,45,120,0.25)">
                                                 <div style="width:34px;height:34px;background:white;display:flex;align-items:center;justify-content:center;box-shadow:3px 3px 0 var(--pink)">
@@ -492,7 +678,6 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <!-- Card info -->
                                         <div class="p-3 space-y-1.5" style="background:var(--surface)">
                                             <h4 class="font-bold truncate text-white"
                                                 style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase">
@@ -508,9 +693,120 @@
                             </div>
                         </section>
 
-                        <!-- Y2K Footer decoration -->
+                        <!-- Y2K Footer -->
                         <div class="mt-16 mb-6 text-center" style="font-family:'VT323',monospace;font-size:14px;opacity:0.25;letter-spacing:0.5em">
-                            <div>✦ ✦ ✦ &nbsp; HIDZ TV &nbsp; ✦ ✦ ✦</div>
+                            <div>✦ ✦ ✦ &nbsp; TV NASIONAL &nbsp; ✦ ✦ ✦</div>
+                            <div class="neon-pink mt-1">SIARAN INDONESIA</div>
+                        </div>
+                    </div>
+                `;
+
+            /* ════════════════════════
+               TV INTERNASIONAL PAGE
+            ════════════════════════ */
+            } else if (pageName === 'international') {
+                const channels = INTL_CHANNELS;
+                const firstCh  = channels[0];
+                container.innerHTML = `
+                    <div class="pt-14 animate-in">
+
+                        <!-- Y2K TICKER BAR (cyan theme) -->
+                        <div class="ticker-bar" style="background:var(--surface2);border-top:2px solid var(--cyan);border-bottom:2px solid var(--cyan)">
+                            <div class="marquee-inner" style="font-family:'VT323',monospace;font-size:15px;color:var(--cyan);letter-spacing:0.3em;padding:0 16px">
+                                ✦ TV INTERNASIONAL — WORLD TV STREAMING LIVE &nbsp;✦&nbsp; HD QUALITY &nbsp;✦&nbsp; ${INTL_CHANNELS.length} WORLD CHANNELS &nbsp;✦&nbsp; SELAMAT MENONTON &nbsp;✦&nbsp; NO BUFFER TECHNOLOGY &nbsp;✦&nbsp;
+                            </div>
+                        </div>
+
+                        <!-- HERO SECTION -->
+                        <section class="relative overflow-hidden" style="height:65vh;border-bottom:2px solid rgba(0,229,255,0.15)">
+                            <div class="absolute inset-0 z-0">${createBannerHTML(firstCh, "large")}</div>
+                            <div class="absolute inset-0" style="background:linear-gradient(to top, var(--bg) 0%, rgba(5,5,8,0.55) 50%, transparent 100%)"></div>
+                            <div class="absolute inset-0" style="background:linear-gradient(to right, rgba(5,5,8,0.85) 0%, transparent 65%)"></div>
+                            <div class="absolute top-4 right-4 z-10 text-right" style="font-family:'VT323',monospace;font-size:13px">
+                                <div class="neon-cyan tracking-widest mb-1">🌐 TV INTERNASIONAL</div>
+                                <div class="neon-yellow">★★★★★</div>
+                            </div>
+                            <div class="absolute inset-0 z-10 flex flex-col justify-end p-5 md:p-10">
+                                <div class="inline-flex items-center gap-2 mb-3 px-3 py-1"
+                                     style="background:var(--cyan);border:2px solid white;box-shadow:3px 3px 0 white;width:fit-content;font-family:'VT323',monospace;font-size:14px;letter-spacing:0.25em;color:black">
+                                    <div style="width:6px;height:6px;background:black;border-radius:50%;animation:live-pulse 1.2s ease-in-out infinite;display:inline-block;flex-shrink:0"></div>
+                                    SEDANG TAYANG
+                                </div>
+                                <h2 style="font-family:'Bebas Neue',sans-serif;font-size:clamp(2.8rem,9vw,5.5rem);letter-spacing:0.06em;line-height:1;text-shadow:4px 4px 0 var(--cyan);max-width:700px">
+                                    ${firstCh.displayName}
+                                </h2>
+                                <div class="flex items-center gap-3 mt-3 mb-5" style="font-family:'VT323',monospace;font-size:16px">
+                                    <span class="neon-cyan flex items-center gap-1.5">
+                                        <div style="width:5px;height:5px;background:var(--cyan);border-radius:50%;animation:live-pulse 1.5s ease-in-out infinite;display:inline-block"></div>
+                                        ${firstCh.match} MATCH
+                                    </span>
+                                    <span class="text-white/30">|</span>
+                                    <span class="px-2 py-0.5 neon-yellow" style="border:1px solid rgba(255,224,0,0.3);font-size:13px">
+                                        ${firstCh.flag || ''} ${firstCh.region || ''} · ${firstCh.language || ''}
+                                    </span>
+                                </div>
+                                <button onclick="showPage('watch', ${firstCh.id})" class="btn btn-white" style="width:fit-content;box-shadow:4px 4px 0 var(--cyan)">
+                                    <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+                                    TONTON SEKARANG
+                                </button>
+                            </div>
+                        </section>
+
+                        <!-- CHANNEL GRID -->
+                        <section class="px-4 md:px-10 mt-8 space-y-5">
+                            <button onclick="showPage('home')" class="btn btn-dark mb-2" style="border-color:rgba(0,229,255,0.5)">
+                                <i data-lucide="arrow-left" class="w-3 h-3" style="color:var(--cyan)"></i>
+                                <span style="color:var(--cyan)">MENU UTAMA</span>
+                            </button>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="section-accent-cyan"></div>
+                                    <h3 class="neon-cyan" style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:0.1em">🌐 SEMUA SALURAN INTERNASIONAL</h3>
+                                </div>
+                                <span class="neon-cyan" style="font-family:'VT323',monospace;font-size:15px">${INTL_CHANNELS.length} CH LIVE</span>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
+                                ${INTL_CHANNELS.map(ch => `
+                                    <div onclick="showPage('watch', ${ch.id})"
+                                         class="group cursor-pointer overflow-hidden"
+                                         style="border:2px solid rgba(0,229,255,0.18);box-shadow:3px 3px 0 var(--cyan);background:var(--surface);transition:border-color 0.12s,box-shadow 0.12s,transform 0.12s"
+                                         onmouseenter="this.style.borderColor='rgba(0,229,255,0.75)';this.style.boxShadow='5px 5px 0 var(--cyan)';this.style.transform='translate(-2px,-2px)'"
+                                         onmouseleave="this.style.borderColor='rgba(0,229,255,0.18)';this.style.boxShadow='3px 3px 0 var(--cyan)';this.style.transform=''"
+                                         onmousedown="this.style.transform='translate(3px,3px)';this.style.boxShadow='0 0 0'"
+                                         onmouseup="this.style.borderColor='rgba(0,229,255,0.75)';this.style.boxShadow='5px 5px 0 var(--cyan)';this.style.transform='translate(-2px,-2px)'">
+                                        <div class="aspect-video relative overflow-hidden bg-black">
+                                            ${createBannerHTML(ch)}
+                                            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200"
+                                                 style="background:rgba(0,229,255,0.2)">
+                                                <div style="width:34px;height:34px;background:white;display:flex;align-items:center;justify-content:center;box-shadow:3px 3px 0 var(--cyan)">
+                                                    <i data-lucide="play" class="w-4 h-4 fill-black text-black"></i>
+                                                </div>
+                                            </div>
+                                            <!-- Flag badge -->
+                                            <div class="absolute top-1.5 right-1.5" style="font-size:1.1rem;line-height:1;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.9))">${ch.flag || ''}</div>
+                                        </div>
+                                        <div class="p-3 space-y-1" style="background:var(--surface)">
+                                            <h4 class="font-bold truncate text-white"
+                                                style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase">
+                                                ${ch.displayName}
+                                            </h4>
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center gap-1.5">
+                                                    <div style="width:5px;height:5px;background:var(--cyan);border-radius:50%;animation:live-pulse 1.5s ease-in-out infinite;display:inline-block;flex-shrink:0"></div>
+                                                    <span class="neon-cyan" style="font-family:'VT323',monospace;font-size:13px">${ch.match}</span>
+                                                </div>
+                                                <span style="font-family:'VT323',monospace;font-size:12px;color:rgba(255,255,255,0.35)">${ch.language || ''}</span>
+                                            </div>
+                                            <div style="font-family:'VT323',monospace;font-size:12px;color:rgba(255,255,255,0.3)">${ch.flag || ''} ${ch.region || ''}</div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </section>
+
+                        <!-- Y2K Footer -->
+                        <div class="mt-16 mb-6 text-center" style="font-family:'VT323',monospace;font-size:14px;opacity:0.25;letter-spacing:0.5em">
+                            <div>✦ ✦ ✦ &nbsp; TV INTERNASIONAL &nbsp; ✦ ✦ ✦</div>
                             <div class="neon-cyan mt-1">POWERED BY HIDZ FORUM</div>
                         </div>
                     </div>
@@ -520,8 +816,12 @@
                WATCH PAGE
             ════════════════════════ */
             } else if (pageName === 'watch') {
-                const ch = CHANNELS[channelId];
-                const others = CHANNELS.filter(c => c.id !== ch.id);
+                const ch         = ALL_CHANNELS[channelId];
+                const isNational = ch.type === 'national';
+                const backPage   = isNational ? 'national' : 'international';
+                const backLabel  = isNational ? '🇮🇩 TV NASIONAL' : '🌐 TV INTERNASIONAL';
+                const catChannels = isNational ? NATIONAL_CHANNELS : INTL_CHANNELS;
+                const others = catChannels.filter(c => c.id !== ch.id);
                 const recs   = others.slice(0, 4);
                 const more   = others.slice(4);
 
@@ -545,8 +845,8 @@
                         <div class="max-w-[1400px] mx-auto px-4 md:px-10 mt-6 pb-20">
 
                             <!-- BACK BUTTON -->
-                            <button onclick="showPage('home')" class="btn btn-dark mb-6">
-                                <i data-lucide="arrow-left" class="w-3 h-3"></i> BERANDA
+                            <button onclick="showPage('${backPage}')" class="btn btn-dark mb-6">
+                                <i data-lucide="arrow-left" class="w-3 h-3"></i> ${backLabel}
                             </button>
 
                             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
@@ -665,6 +965,7 @@
                             </div>
 
                             <!-- MORE CHANNELS (horizontal scroll) -->
+                            ${more.length > 0 ? `
                             <div class="mt-14 space-y-5">
                                 <div class="flex items-center gap-3">
                                     <div class="section-accent-lime"></div>
@@ -695,6 +996,7 @@
                                     `).join('')}
                                 </div>
                             </div>
+                            ` : ''}
                         </div>
                     </div>
                 `;
