@@ -1011,91 +1011,150 @@
                 `;
 
                 const video = document.getElementById('video-player');
-                const sources = Array.isArray(ch.sources) && ch.sources.length ? ch.sources : [ch.url];
+                const sources = [...new Set((Array.isArray(ch.sources) && ch.sources.length ? ch.sources : [ch.url]).filter(Boolean))];
                 let sourceIndex = 0;
-                let sourceAttempted = false;
+                let sourceTimer = null;
+                let playbackStarted = false;
+                let switching = false;
+
+                const showStreamStatus = (message) => {
+                    const player = video.parentElement;
+                    if (!player) return;
+                    let status = player.querySelector('.stream-status');
+                    if (!status) {
+                        status = document.createElement('div');
+                        status.className = 'stream-status absolute inset-0 z-10 flex items-center justify-center p-6 text-center pointer-events-none';
+                        status.style.cssText = 'background:rgba(5,5,8,.72)';
+                        player.appendChild(status);
+                    }
+                    status.innerHTML = `<div><div class="neon-pink mb-3" style="font-family:'VT323',monospace;font-size:22px">${message}</div><div style="font-family:'Space Mono',monospace;font-size:8px;color:rgba(255,255,255,.5)">HIDZ TV PLAYER</div></div>`;
+                    status.style.display = 'flex';
+                };
+
+                const hideStreamStatus = () => {
+                    const status = video.parentElement?.querySelector('.stream-status');
+                    if (status) status.style.display = 'none';
+                };
 
                 const showStreamError = () => {
+                    clearTimeout(sourceTimer);
+                    hideStreamStatus();
                     const player = video.parentElement;
                     if (!player || player.querySelector('.stream-error-overlay')) return;
                     player.insertAdjacentHTML('beforeend', `
-                        <div class="stream-error-overlay absolute inset-0 z-20 flex items-center justify-center p-6 text-center"
-                             style="background:rgba(5,5,8,.92)">
+                        <div class="stream-error-overlay absolute inset-0 z-20 flex items-center justify-center p-6 text-center" style="background:rgba(5,5,8,.94)">
                             <div>
                                 <div class="neon-pink mb-3" style="font-family:'VT323',monospace;font-size:24px">STREAM TIDAK TERSEDIA</div>
-                                <p style="font-family:'Space Mono',monospace;font-size:9px;color:rgba(255,255,255,.45);max-width:420px">
-                                    Endpoint siaran sedang offline atau menolak akses dari browser. Hidz TV sudah mencoba semua sumber yang tersedia.
+                                <p style="font-family:'Space Mono',monospace;font-size:9px;color:rgba(255,255,255,.45);max-width:420px;margin:auto">
+                                    Semua sumber siaran yang tersedia gagal dimuat atau ditolak oleh server.
                                 </p>
                                 <button onclick="showPage('watch', ${ch.id})" class="btn btn-dark mt-5">COBA LAGI</button>
                             </div>
-                        </div>
-                    `);
+                        </div>`);
                 };
 
-                const clearStreamError = () => {
-                    video.parentElement?.querySelector('.stream-error-overlay')?.remove();
+                const cleanupPlayer = () => {
+                    clearTimeout(sourceTimer);
+                    if (hlsInstance) {
+                        hlsInstance.destroy();
+                        hlsInstance = null;
+                    }
+                    video.pause();
+                    video.removeAttribute('src');
+                    video.load();
+                    video.onloadedmetadata = null;
+                    video.oncanplay = null;
+                    video.onerror = null;
                 };
 
-                const tryNextSource = () => {
-                    if (sourceAttempted) return;
-                    sourceAttempted = true;
+                const tryNextSource = (reason = 'error') => {
+                    if (switching) return;
+                    switching = true;
+                    clearTimeout(sourceTimer);
+                    cleanupPlayer();
 
                     if (sourceIndex >= sources.length) {
+                        switching = false;
                         showStreamError();
                         return;
                     }
 
                     const currentSource = sources[sourceIndex++];
-                    clearStreamError();
+                    showStreamStatus(sourceIndex === 1 ? 'MENGHUBUNGKAN...' : 'PINDAH KE SUMBER CADANGAN...');
+                    playbackStarted = false;
 
-                    if (hlsInstance) {
-                        hlsInstance.destroy();
-                        hlsInstance = null;
-                    }
+                    const sourceFailed = () => {
+                        if (playbackStarted) return;
+                        switching = false;
+                        tryNextSource('timeout/error');
+                    };
+
+                    sourceTimer = setTimeout(sourceFailed, 12000);
 
                     if (Hls.isSupported()) {
-                        hlsInstance = new Hls({
+                        const hls = new Hls({
                             enableWorker: true,
                             lowLatencyMode: true,
                             backBufferLength: 30,
-                            manifestLoadingMaxRetry: 1,
-                            levelLoadingMaxRetry: 1,
-                            fragLoadingMaxRetry: 1
+                            maxBufferLength: 20,
+                            manifestLoadingMaxRetry: 0,
+                            levelLoadingMaxRetry: 0,
+                            fragLoadingMaxRetry: 0,
+                            manifestLoadingTimeOut: 7000,
+                            levelLoadingTimeOut: 7000,
+                            fragLoadingTimeOut: 7000
+                        });
+                        hlsInstance = hls;
+
+                        hls.on(Hls.Events.MEDIA_ATTACHED, () => {
+                            if (hlsInstance !== hls) return;
+                            hls.loadSource(currentSource);
                         });
 
-                        hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
-                            sourceAttempted = false;
-                            video.play().catch(function() {});
+                        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                            if (hlsInstance !== hls) return;
+                            clearTimeout(sourceTimer);
+                            playbackStarted = true;
+                            switching = false;
+                            hideStreamStatus();
+                            video.play().catch(() => {});
                         });
 
-                        hlsInstance.on(Hls.Events.ERROR, function(event, info) {
-                            if (!info.fatal) return;
-
+                        hls.on(Hls.Events.ERROR, (_, info) => {
+                            if (hlsInstance !== hls || !info.fatal) return;
                             if (info.type === Hls.ErrorTypes.MEDIA_ERROR) {
-                                hlsInstance.recoverMediaError();
-                                return;
+                                try {
+                                    hls.recoverMediaError();
+                                    return;
+                                } catch (_) {}
                             }
-
-                            if (info.type === Hls.ErrorTypes.NETWORK_ERROR || info.type === Hls.ErrorTypes.MEDIA_ERROR) {
-                                tryNextSource();
-                            } else {
-                                tryNextSource();
-                            }
+                            sourceFailed();
                         });
 
-                        hlsInstance.loadSource(currentSource);
-                        hlsInstance.attachMedia(video);
+                        hls.attachMedia(video);
                     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                        video.onloadedmetadata = () => {
+                            clearTimeout(sourceTimer);
+                            playbackStarted = true;
+                            switching = false;
+                            hideStreamStatus();
+                            video.play().catch(() => {});
+                        };
+                        video.oncanplay = () => {
+                            if (!playbackStarted) {
+                                clearTimeout(sourceTimer);
+                                playbackStarted = true;
+                                switching = false;
+                                hideStreamStatus();
+                                video.play().catch(() => {});
+                            }
+                        };
+                        video.onerror = sourceFailed;
                         video.src = currentSource;
-                        video.onloadedmetadata = function() {
-                            sourceAttempted = false;
-                            video.play().catch(function() {});
-                        };
-                        video.onerror = function() {
-                            tryNextSource();
-                        };
                         video.load();
                     } else {
+                        clearTimeout(sourceTimer);
+                        switching = false;
                         showStreamError();
                     }
                 };
