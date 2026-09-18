@@ -305,36 +305,36 @@
 
     <script>
         // === KONFIGURASI SALURAN NASIONAL (INDONESIA) ===
+        // Sumber utama + cadangan dipakai agar channel tidak langsung mati
+        // ketika salah satu endpoint CDN berubah / sedang offline.
         const RAW_NATIONAL = [
-            { name: 'RTV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h10/index.m3u8', color: 'from-purple-600 to-indigo-900' },
-            { name: 'RTV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h10/02.m3u8', color: 'from-purple-600 to-indigo-900' },
-            { name: 'RTV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h10/01.m3u8', color: 'from-purple-600 to-indigo-900' },
-            { name: 'TRANS7', url: 'https://video.detik.com/trans7/smil:trans7.smil/playlist.m3u8', color: 'from-red-600 to-blue-800' },
-            { name: 'TRANS7', url: 'https://video.detik.com/trans7/smil:trans7.smil/chunklist_w286481765_b744100_sleng.m3u8', color: 'from-red-600 to-blue-800' },
-            { name: 'TRANS TV', url: 'https://video.detik.com/transtv/smil:transtv.smil/playlist.m3u8', color: 'from-sky-500 to-blue-700' },
-            { name: 'TV ONE', url: 'https://video.detik.com/transtv/smil:transtv.smil/chunklist_w1110309016_b744100_sleng.m3u8', color: 'from-red-600 to-black' },
-            { name: 'TV ONE', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h40/index.m3u8', color: 'from-red-600 to-black' },
-            { name: 'TV ONE', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h40/02.m3u8', color: 'from-red-600 to-black' },
-            { name: 'TV ONE', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h40/01.m3u8', color: 'from-red-600 to-black' },
-            { name: 'KOMPAS TV', url: 'https://op-group1-swiftservehd-1.dens.tv/s/s104/index.m3u8', color: 'from-blue-800 to-cyan-900' },
-            { name: 'KOMPAS TV', url: 'https://op-group1-swiftservehd-1.dens.tv/s/s104/02.m3u8', color: 'from-blue-800 to-cyan-900' },
-            { name: 'KOMPAS TV', url: 'https://op-group1-swiftservehd-1.dens.tv/s/s104/01.m3u8', color: 'from-blue-800 to-cyan-900' },
-            { name: 'MDTV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h223/index.m3u8?app_type=web&userid=lite&chname=MDTV', color: 'from-pink-600 to-purple-800' },
-            { name: 'MDTV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h223/02.m3u8', color: 'from-pink-600 to-purple-800' },
-            { name: 'TVRI', url: 'https://ott-balancer.tvri.go.id/live/eds/Nasional/hls/Nasional.m3u8', color: 'from-blue-900 to-black' },
-            { name: 'TVRI', url: 'https://ott-balancer.tvri.go.id/live/eds/Nasional/hls/Nasional-avc1_250000=10000-mp4a_64000_eng=20003.m3u8', color: 'from-blue-900 to-black' },
-            { name: 'METRO TV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h12/index.m3u8', color: 'from-blue-900 to-yellow-600' },
-            { name: 'METRO TV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h12/02.m3u8', color: 'from-blue-900 to-yellow-600' },
-            { name: 'METRO TV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h12/01.m3u8', color: 'from-blue-900 to-yellow-600' },
-            { name: 'BTV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h129/S4/mnf.m3u8', color: 'from-orange-500 to-red-700' },
-            { name: 'SCTV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h217/index.m3u8', color: 'from-sky-400 to-blue-600' },
-            { name: 'SCTV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h217/02.m3u8', color: 'from-sky-400 to-blue-600' },
-            { name: 'MDJI', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h207/index.m3u8', color: 'from-green-600 to-emerald-900' },
-            { name: 'MDJI', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h207/02.m3u8', color: 'from-green-600 to-emerald-900' },
-            { name: 'INDOSIAR', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h235/index.m3u8', color: 'from-blue-600 via-white/10 to-red-600' },
-            { name: 'INDOSIAR', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h235/02.m3u8', color: 'from-blue-600 via-white/10 to-red-600' },
-            { name: 'CNN TV', url: 'https://live.cnnindonesia.com/livecnn/smil:cnntv.smil/chunklist_w672934803_b384000_sleng.m3u8', color: 'from-red-600 via-red-800 to-black' },
-            { name: 'SPORT TV', url: 'https://cdn3.wowza.com/5/ZWQ1K2NYTmpFbGsr/BEK-WOWZA-1/smil:BEKPRIMEW.smil/playlist.m3u8', color: 'from-green-500 via-emerald-700 to-teal-900' }
+            { name: 'RCTI', url: 'https://vcdn2.rctiplus.id/live/eds/rcti_fta/live_fta/rcti_fta-avc1_1537200=7-mp4a_64000_eng=2.m3u8', sources: ['https://vcdn2.rctiplus.id/live/eds/rcti_fta/live_fta/rcti_fta-avc1_1537200=7-mp4a_64000_eng=2.m3u8'], color: 'from-red-600 to-red-950' },
+            { name: 'MNCTV', url: 'https://vcdn2.rctiplus.id/live/eds/mnctv_fta/live_fta/mnctv_fta-avc1_1537200=7-mp4a_64000_eng=2.m3u8', sources: ['https://vcdn2.rctiplus.id/live/eds/mnctv_fta/live_fta/mnctv_fta-avc1_1537200=7-mp4a_64000_eng=2.m3u8'], color: 'from-blue-700 to-purple-900' },
+            { name: 'GTV', url: 'https://vcdn2.rctiplus.id/live/eds/gtv_fta/live_fta/gtv_fta-avc1_1537200=6-mp4a_64000_eng=2.m3u8', sources: ['https://vcdn2.rctiplus.id/live/eds/gtv_fta/live_fta/gtv_fta-avc1_1537200=6-mp4a_64000_eng=2.m3u8'], color: 'from-orange-500 to-red-800' },
+            { name: 'iNEWS', url: 'https://vcdn2.rctiplus.id/live/eds/inews_fta/live_fta/inews_fta.m3u8', sources: ['https://vcdn2.rctiplus.id/live/eds/inews_fta/live_fta/inews_fta.m3u8'], color: 'from-red-700 to-black' },
+            { name: 'RTV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h10/index.m3u8', sources: ['https://op-group1-swiftservehd-1.dens.tv/h/h10/index.m3u8', 'https://op-group1-swiftservehd-1.dens.tv/h/h10/02.m3u8'], color: 'from-purple-600 to-indigo-900' },
+            { name: 'TRANS7', url: 'https://video.detik.com/trans7/smil:trans7.smil/playlist.m3u8', sources: ['https://video.detik.com/trans7/smil:trans7.smil/playlist.m3u8', 'https://video.detik.com/trans7/smil:trans7.smil/chunklist_w286481765_b744100_sleng.m3u8'], color: 'from-red-600 to-blue-800' },
+            { name: 'TRANS TV', url: 'https://video.detik.com/transtv/smil:transtv.smil/playlist.m3u8', sources: ['https://video.detik.com/transtv/smil:transtv.smil/playlist.m3u8'], color: 'from-sky-500 to-blue-700' },
+            { name: 'TV ONE', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h40/index.m3u8', sources: ['https://op-group1-swiftservehd-1.dens.tv/h/h40/index.m3u8', 'https://op-group1-swiftservehd-1.dens.tv/h/h40/02.m3u8'], color: 'from-red-600 to-black' },
+            { name: 'KOMPAS TV', url: 'https://op-group1-swiftservehd-1.dens.tv/s/s104/index.m3u8', sources: ['https://op-group1-swiftservehd-1.dens.tv/s/s104/index.m3u8', 'https://op-group1-swiftservehd-1.dens.tv/s/s104/02.m3u8'], color: 'from-blue-800 to-cyan-900' },
+            { name: 'MDTV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h223/index.m3u8?app_type=web&userid=lite&chname=MDTV', sources: ['https://op-group1-swiftservehd-1.dens.tv/h/h223/index.m3u8?app_type=web&userid=lite&chname=MDTV', 'https://op-group1-swiftservehd-1.dens.tv/h/h223/02.m3u8'], color: 'from-pink-600 to-purple-800' },
+            { name: 'TVRI', url: 'https://ott-balancer.tvri.go.id/live/eds/Nasional/hls/Nasional.m3u8', sources: ['https://ott-balancer.tvri.go.id/live/eds/Nasional/hls/Nasional.m3u8'], color: 'from-blue-900 to-black' },
+            { name: 'TVRI WORLD', url: 'https://ott-balancer.tvri.go.id/live/eds/TVRIWorld/hls/TVRIWorld.m3u8', sources: ['https://ott-balancer.tvri.go.id/live/eds/TVRIWorld/hls/TVRIWorld.m3u8'], color: 'from-slate-700 to-black' },
+            { name: 'TVRI SPORT', url: 'http://118.97.50.107/Content/HLS/Live/Channel(TVRI4)/index.m3u8', sources: ['http://118.97.50.107/Content/HLS/Live/Channel(TVRI4)/index.m3u8'], color: 'from-green-700 to-blue-950' },
+            { name: 'METRO TV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h12/index.m3u8', sources: ['https://op-group1-swiftservehd-1.dens.tv/h/h12/index.m3u8', 'https://op-group1-swiftservehd-1.dens.tv/h/h12/02.m3u8'], color: 'from-blue-900 to-yellow-600' },
+            { name: 'BTV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h129/S4/mnf.m3u8', sources: ['https://op-group1-swiftservehd-1.dens.tv/h/h129/S4/mnf.m3u8'], color: 'from-orange-500 to-red-700' },
+            { name: 'SCTV', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h217/index.m3u8', sources: ['https://op-group1-swiftservehd-1.dens.tv/h/h217/index.m3u8', 'https://op-group1-swiftservehd-1.dens.tv/h/h217/02.m3u8'], color: 'from-sky-400 to-blue-600' },
+            { name: 'INDOSIAR', url: 'https://op-group1-swiftservehd-1.dens.tv/h/h235/index.m3u8', sources: ['https://op-group1-swiftservehd-1.dens.tv/h/h235/index.m3u8', 'https://op-group1-swiftservehd-1.dens.tv/h/h235/02.m3u8'], color: 'from-blue-600 via-white/10 to-red-600' },
+            { name: 'CNN INDONESIA', url: 'https://live.cnnindonesia.com/livecnn/smil:cnntv.smil/chunklist_w672934803_b384000_sleng.m3u8', sources: ['https://live.cnnindonesia.com/livecnn/smil:cnntv.smil/chunklist_w672934803_b384000_sleng.m3u8'], color: 'from-red-600 via-red-800 to-black' },
+            { name: 'CNBC INDONESIA', url: 'https://live.cnbcindonesia.com/livecnbc/smil:cnbctv.smil/playlist.m3u8', sources: ['https://live.cnbcindonesia.com/livecnbc/smil:cnbctv.smil/playlist.m3u8'], color: 'from-blue-700 to-cyan-950' },
+            { name: 'GARUDA TV', url: 'https://stream.garuda.tv/live/garudatv/live.m3u8', sources: ['https://stream.garuda.tv/live/garudatv/live.m3u8'], color: 'from-red-700 to-blue-950' },
+            { name: 'NUSANTARA TV', url: 'https://nusantaratv.siar.us/nusantaratv/live/playlist.m3u8', sources: ['https://nusantaratv.siar.us/nusantaratv/live/playlist.m3u8', 'https://nusantaratv.siar.us/nusantaratv/live/chunks.m3u8'], color: 'from-blue-700 to-cyan-900' },
+            { name: 'MAGNA TV', url: 'https://edge.medcom.id/live-edge/smil:magna.smil/playlist.m3u8', sources: ['https://edge.medcom.id/live-edge/smil:magna.smil/playlist.m3u8'], color: 'from-purple-700 to-pink-900' },
+            { name: 'ADI TV', url: 'https://v2.siar.us/aditv/livestream/playlist.m3u8', sources: ['https://v2.siar.us/aditv/livestream/playlist.m3u8'], color: 'from-emerald-600 to-green-950' },
+            { name: 'RCTV', url: 'https://v10.siar.us/rctv/live/playlist.m3u8', sources: ['https://v10.siar.us/rctv/live/playlist.m3u8'], color: 'from-orange-600 to-red-950' },
+            { name: 'PAL TV', url: 'https://v3.siar.us/paltv/live/playlist.m3u8', sources: ['https://v3.siar.us/paltv/live/playlist.m3u8'], color: 'from-yellow-500 to-red-900' },
+            { name: 'RRI NET', url: 'https://rrinet.rri.co.id/hls/live.m3u8', sources: ['https://rrinet.rri.co.id/hls/live.m3u8'], color: 'from-blue-700 to-indigo-950' },
+            { name: 'BBS TV', url: 'http://103.119.54.246:8080/hls/bbstv.m3u8', sources: ['http://103.119.54.246:8080/hls/bbstv.m3u8'], color: 'from-red-600 to-orange-900' }
         ];
 
         // === KONFIGURASI SALURAN INTERNASIONAL ===
@@ -343,7 +343,14 @@
             { name: 'DW English', url: 'https://dwamdstream102.akamaized.net/hls/live/2015525/dwstream102/index.m3u8', color: 'from-zinc-700 to-red-900', region: 'Germany', language: 'English', flag: '🇩🇪' },
             { name: 'DW Arabic', url: 'https://dwamdstream104.akamaized.net/hls/live/2015530/dwstream104/index.m3u8', color: 'from-zinc-600 to-yellow-900', region: 'Germany', language: 'العربية', flag: '🇩🇪' },
             { name: 'TVRI World', url: 'https://ott-balancer.tvri.go.id/live/eds/TVRIWorld/hls/TVRIWorld.m3u8', color: 'from-slate-700 to-black', region: 'Indonesia', language: 'English', flag: '🇮🇩' },
-            { name: 'EBS KIDS', url: 'https://ebsonair.ebs.co.kr/plus3familypc/familypc1m/playlist.m3u8', color: 'from-green-400 to-blue-500', region: 'Korea', language: 'Korean', flag: '🇰🇷' }
+            { name: 'EBS KIDS', url: 'https://ebsonair.ebs.co.kr/plus3familypc/familypc1m/playlist.m3u8', color: 'from-green-400 to-blue-500', region: 'Korea', language: 'Korean', flag: '🇰🇷' },
+            { name: 'NHK WORLD-JAPAN', url: 'https://media-tyo.hls.nhkworld.jp/hls/w/live/master.m3u8', color: 'from-red-700 to-slate-950', region: 'Japan', language: 'English', flag: '🇯🇵' },
+            { name: 'EURONEWS', url: 'https://cdn-euronews.akamaized.net/live/eds/euronews-en/25002/index.m3u8', color: 'from-blue-700 to-indigo-950', region: 'Europe', language: 'English', flag: '🇪🇺' },
+            { name: 'AL JAZEERA ENGLISH', url: 'https://d35j504z0x2vu2.cloudfront.net/v1/master/0bc8e8376bd8417a1b6761138aa41c26c7309312/al-jazeera-english/playlist.m3u8', color: 'from-red-800 to-black', region: 'Qatar', language: 'English', flag: '🇶🇦' },
+            { name: 'ARIRANG', url: 'http://amdlive-ch01.ctnd.com.edgesuite.net/arirang_1ch/smil:arirang_1ch.smil/playlist.m3u8', color: 'from-blue-600 to-purple-950', region: 'Korea', language: 'English', flag: '🇰🇷' },
+            { name: 'TRT WORLD', url: 'https://tv-trtworld.live.trt.com.tr/master.m3u8', color: 'from-red-700 to-cyan-950', region: 'Turkey', language: 'English', flag: '🇹🇷' },
+            { name: 'RT AMERICA', url: 'https://rt-usa.gcdn.co/live/rtusa/playlist.m3u8', color: 'from-green-700 to-black', region: 'USA', language: 'English', flag: '🇺🇸' },
+            { name: 'CBS NEWS', url: 'https://cbsn-us-cedexis.cbsnstream.cbsnews.com/out/v1/55a8648e8f134e82a470f83d562deeca/master.m3u8', color: 'from-blue-700 to-slate-950', region: 'USA', language: 'English', flag: '🇺🇸' }
         ];
 
         let NATIONAL_CHANNELS = [];
@@ -360,6 +367,7 @@
                 const finalName = natCounts[ch.name] > 1 ? `${ch.name} ${natCounts[ch.name]}` : ch.name;
                 return {
                     ...ch,
+                    sources: Array.isArray(ch.sources) && ch.sources.length ? ch.sources : [ch.url],
                     id: index,
                     displayName: finalName,
                     match: `${Math.floor(Math.random() * 15) + 85}%`,
@@ -375,6 +383,7 @@
                 const finalName = intlCounts[ch.name] > 1 ? `${ch.name} ${intlCounts[ch.name]}` : ch.name;
                 return {
                     ...ch,
+                    sources: Array.isArray(ch.sources) && ch.sources.length ? ch.sources : [ch.url],
                     id: NATIONAL_CHANNELS.length + index,
                     displayName: finalName,
                     match: `${Math.floor(Math.random() * 15) + 85}%`,
@@ -1002,19 +1011,96 @@
                 `;
 
                 const video = document.getElementById('video-player');
-                if (Hls.isSupported()) {
-                    hlsInstance = new Hls();
-                    hlsInstance.loadSource(ch.url);
-                    hlsInstance.attachMedia(video);
-                    hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
-                        video.play().catch(function(e) { console.log("Auto-play blocked"); });
-                    });
-                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                    video.src = ch.url;
-                    video.addEventListener('loadedmetadata', function() {
-                        video.play().catch(function(e) { console.log("Auto-play blocked"); });
-                    });
-                }
+                const sources = Array.isArray(ch.sources) && ch.sources.length ? ch.sources : [ch.url];
+                let sourceIndex = 0;
+                let sourceAttempted = false;
+
+                const showStreamError = () => {
+                    const player = video.parentElement;
+                    if (!player || player.querySelector('.stream-error-overlay')) return;
+                    player.insertAdjacentHTML('beforeend', `
+                        <div class="stream-error-overlay absolute inset-0 z-20 flex items-center justify-center p-6 text-center"
+                             style="background:rgba(5,5,8,.92)">
+                            <div>
+                                <div class="neon-pink mb-3" style="font-family:'VT323',monospace;font-size:24px">STREAM TIDAK TERSEDIA</div>
+                                <p style="font-family:'Space Mono',monospace;font-size:9px;color:rgba(255,255,255,.45);max-width:420px">
+                                    Endpoint siaran sedang offline atau menolak akses dari browser. Hidz TV sudah mencoba semua sumber yang tersedia.
+                                </p>
+                                <button onclick="showPage('watch', ${ch.id})" class="btn btn-dark mt-5">COBA LAGI</button>
+                            </div>
+                        </div>
+                    `);
+                };
+
+                const clearStreamError = () => {
+                    video.parentElement?.querySelector('.stream-error-overlay')?.remove();
+                };
+
+                const tryNextSource = () => {
+                    if (sourceAttempted) return;
+                    sourceAttempted = true;
+
+                    if (sourceIndex >= sources.length) {
+                        showStreamError();
+                        return;
+                    }
+
+                    const currentSource = sources[sourceIndex++];
+                    clearStreamError();
+
+                    if (hlsInstance) {
+                        hlsInstance.destroy();
+                        hlsInstance = null;
+                    }
+
+                    if (Hls.isSupported()) {
+                        hlsInstance = new Hls({
+                            enableWorker: true,
+                            lowLatencyMode: true,
+                            backBufferLength: 30,
+                            manifestLoadingMaxRetry: 1,
+                            levelLoadingMaxRetry: 1,
+                            fragLoadingMaxRetry: 1
+                        });
+
+                        hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
+                            sourceAttempted = false;
+                            video.play().catch(function() {});
+                        });
+
+                        hlsInstance.on(Hls.Events.ERROR, function(event, info) {
+                            if (!info.fatal) return;
+
+                            if (info.type === Hls.ErrorTypes.MEDIA_ERROR) {
+                                hlsInstance.recoverMediaError();
+                                return;
+                            }
+
+                            if (info.type === Hls.ErrorTypes.NETWORK_ERROR || info.type === Hls.ErrorTypes.MEDIA_ERROR) {
+                                tryNextSource();
+                            } else {
+                                tryNextSource();
+                            }
+                        });
+
+                        hlsInstance.loadSource(currentSource);
+                        hlsInstance.attachMedia(video);
+                    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                        video.src = currentSource;
+                        video.onloadedmetadata = function() {
+                            sourceAttempted = false;
+                            video.play().catch(function() {});
+                        };
+                        video.onerror = function() {
+                            tryNextSource();
+                        };
+                        video.load();
+                    } else {
+                        showStreamError();
+                    }
+                };
+
+                tryNextSource();
 
                 video.addEventListener('leavepictureinpicture', () => {
                     setTimeout(() => {
