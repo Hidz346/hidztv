@@ -32,6 +32,7 @@ const ALLOWED_SUFFIXES = [
   '.garuda.tv',
   '.edgenextcdn.net',
   '.streamlock.net',
+  '.streamized.net',
 ];
 
 function isPrivateHostname(hostname: string) {
