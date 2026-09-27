@@ -38,14 +38,14 @@ const make = (
 
 export const CHANNELS: Channel[] = [
   // NATIONAL — 25 channels, matching the APK layout/count.
-  make('gtv', 'GTV HD', 1, 'national', ['https://live.rctiplus.id/rctiplus/gtv_360p.m3u8'], 'linear-gradient(135deg,#ec4899,#7e22ce)', 'https://www.rctiplus.com/tv/gtv'),
-  make('mnctv', 'MNC TV HD', 2, 'national', ['https://live.rctiplus.id/rctiplus/mnctv_720p.m3u8'], 'linear-gradient(135deg,#2563eb,#312e81)', 'https://www.rctiplus.com/tv/mnctv'),
-  make('rcti', 'RCTI HD', 3, 'national', ['https://live.rctiplus.id/rctiplus/rcti_360p.m3u8'], 'linear-gradient(135deg,#ef4444,#7f1d1d)', 'https://www.rctiplus.com/tv/rcti'),
+  make('gtv', 'GTV HD', 1, 'national', ['https://mncmedia.malingtv.workers.dev/gtv.m3u8','https://live.rctiplus.id/rctiplus/gtv_360p.m3u8'], 'linear-gradient(135deg,#ec4899,#7e22ce)', 'https://www.rctiplus.com/tv/gtv'),
+  make('mnctv', 'MNC TV HD', 2, 'national', ['https://mncmedia.malingtv.workers.dev/mnctv.m3u8','https://live.rctiplus.id/rctiplus/mnctv_720p.m3u8'], 'linear-gradient(135deg,#2563eb,#312e81)', 'https://www.rctiplus.com/tv/mnctv'),
+  make('rcti', 'RCTI HD', 3, 'national', ['https://mncmedia.malingtv.workers.dev/rcti.m3u8','https://live.rctiplus.id/rctiplus/rcti_360p.m3u8'], 'linear-gradient(135deg,#ef4444,#7f1d1d)', 'https://www.rctiplus.com/tv/rcti'),
   make('sctv', 'SCTV HD', 4, 'national', ['http://op-group1-swiftservehd-1.dens.tv/h/h217/02.m3u8'], 'linear-gradient(135deg,#38bdf8,#1d4ed8)', 'https://www.vidio.com/micro/live/204-sctv'),
   make('indosiar', 'Indosiar HD', 5, 'national', ['http://op-group1-swiftservehd-1.dens.tv/h/h207/index.m3u8'], 'linear-gradient(135deg,#2563eb,#dc2626)', 'https://www.vidio.com/micro/live/205-indosiar'),
-  make('inews', 'iNews HD', 6, 'national', APK_STREAMS.inews, 'linear-gradient(135deg,#dc2626,#111827)', 'https://www.rctiplus.com/tv/inews'),
-  make('transtv', 'Trans TV HD', 7, 'national', APK_STREAMS.transtv, 'linear-gradient(135deg,#0ea5e9,#1d4ed8)', 'https://www.transtv.co.id/live'),
-  make('trans7', 'Trans7 HD', 8, 'national', APK_STREAMS.trans7, 'linear-gradient(135deg,#dc2626,#1e3a8a)', 'https://www.trans7.co.id/live-streaming'),
+  make('inews', 'iNews HD', 6, 'national', ['https://mncmedia.malingtv.workers.dev/inews.m3u8', ...APK_STREAMS.inews], 'linear-gradient(135deg,#dc2626,#111827)', 'https://www.rctiplus.com/tv/inews'),
+  make('transtv', 'Trans TV HD', 7, 'national', ['https://video.detik.com/transtv/smil:transtv.smil/index.m3u8', ...APK_STREAMS.transtv], 'linear-gradient(135deg,#0ea5e9,#1d4ed8)', 'https://www.transtv.co.id/live'),
+  make('trans7', 'Trans7 HD', 8, 'national', ['https://video.detik.com/trans7/smil:trans7.smil/index.m3u8', ...APK_STREAMS.trans7], 'linear-gradient(135deg,#dc2626,#1e3a8a)', 'https://www.trans7.co.id/live-streaming'),
   make('antv', 'ANTV HD', 9, 'national', ['http://op-group1-swiftservehd-1.dens.tv/s/s07/index.m3u8?app_type=web&userid=lite&chname=antv'], 'linear-gradient(135deg,#f59e0b,#dc2626)', 'https://www.visionplus.id/webclient/#/live'),
   make('daai', 'DAAI TV HD', 10, 'national', APK_STREAMS.daai, 'linear-gradient(135deg,#0f766e,#164e63)', 'https://www.daaiplus.com/'),
   make('rtv', 'RTV HD', 11, 'national', APK_STREAMS.rtv, 'linear-gradient(135deg,#7c3aed,#312e81)', 'https://www.rtv.co.id/'),
