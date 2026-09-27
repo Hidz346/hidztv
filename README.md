@@ -1,10 +1,10 @@
 # HIDZTV
 
-HIDZTV is a Next.js live-TV web application rebuilt from the existing project and aligned with the 52-channel layout shown in the supplied NanzStream APK reference.
+HIDZTV is a Next.js Live TV web application using the 52-channel catalogue already present in the project and the Live TV sources recovered from the supplied NanzStream v1.3.35 APK.
 
 ## Stack
 
-- Next.js 16.3
+- Next.js 16
 - React 19
 - TypeScript
 - Tailwind CSS 4
@@ -12,9 +12,9 @@ HIDZTV is a Next.js live-TV web application rebuilt from the existing project an
 - Lucide React
 - Vercel
 
-## Live TV catalogue
+## Live TV
 
-The web catalogue now contains 52 channels split into:
+The catalogue contains 52 channels:
 
 - Nasional: 25
 - Internasional: 7
@@ -22,43 +22,60 @@ The web catalogue now contains 52 channels split into:
 - Kids: 7
 - Religi: 4
 
-The direct stream entries in lib/apk-streams.ts were extracted from the supplied NanzStream v1.3.35 APK. The website does not invent replacement stream URLs when the APK does not expose a stable direct source for a channel.
+The recovered NanzStream APK provides a direct HLS catalogue for 25 named channels. Those URLs are kept in `lib/nanzstream-tv.ts` and `lib/apk-streams.ts`. Additional URLs recovered from the APK are retained only when their channel association is known; HIDZTV does not guess an association for an unidentified stream.
 
-For channels without a usable direct source, HIDZTV keeps an official/provider URL as fallback. This is intentional: a browser cannot reliably reproduce Android-native playback behavior or upstream request headers that a provider may require.
+## Playback architecture
 
-## Player servers
+```
+HIDZTV channel
+    ↓
+/api/live-tv
+    ↓
+NanzStream APK source resolver
+    ↓
+HIDZTV HLS proxy
+    ↓
+HLS.js
+    ↓
+HTML5 video
+```
 
-- Lite — lower buffer target.
-- Fast — balanced startup/buffering.
-- Max — deeper buffer target and preferred alternate source when available.
-- Embed — provider page fallback.
+For channels with a recovered direct source, the browser requests the same-origin HIDZTV proxy first and keeps the original HLS URL as a last-resort fallback. HLS manifests are rewritten so relative playlists, segments, and key/URI resources continue through the proxy.
 
-The direct HLS path performs source failover before falling back to the provider URL.
+The proxy uses an explicit upstream-host allowlist, validates redirects, adds CORS headers, and avoids exposing provider credentials to the browser.
+
+## Optional CubMu fallback
+
+The existing CubMu resolver remains available only when both server-side variables are configured:
+
+- `CUBMU_EMAIL`
+- `CUBMU_PASSWORD`
+
+These variables are never sent to the client. If they are not configured, the application remains NanzStream-first and simply reports that no recovered source exists for an unresolved channel.
 
 ## Development
 
-~~~bash
+```bash
 npm install
 npm run dev
-~~~
+```
 
-## Production
+Run the production build locally before publishing:
 
-~~~bash
+```bash
+npm run lint
 npm run build
 npm start
-~~~
+```
 
-Vercel detects the project as a Next.js application.
+## Vercel
+
+The repository already contains `vercel.json` configured for Next.js. Vercel can deploy the `main` branch directly.
+
+No client-side environment variable is required for the NanzStream APK source catalogue.
 
 ## Source availability
 
-A live URL can stop working because of upstream changes, CORS, geo restrictions, expiring tokens, referer requirements, or provider-side downtime. Those conditions are outside HIDZTV and are handled with source failover/provider fallback where possible.
+A URL recovered from an APK is evidence that the URL existed in that APK; it is not a guarantee that the upstream server is still online or that the stream is playable from every network. Upstream HLS URLs can expire, change, require special headers, be geo-restricted, or be taken offline.
 
-## APK-based Live TV resolver
-
-HIDZTV now includes a server-side CubMu resolver ported from the Live TV flow found in the supplied NanzStream APK. The port reproduces the APK's token-generation format, channel-list request, `__NEXT_DATA__` live-page parsing, encrypted HLS manifest decryption (AES-128-CFB), and a Vercel route that rewrites HLS manifests through a controlled proxy.
-
-Set `CUBMU_EMAIL` and `CUBMU_PASSWORD` as Vercel server environment variables. Do not prefix them with `NEXT_PUBLIC_`.
-
-The browser never receives the CubMu login credentials. Playback receives only the HIDZTV proxy URL.
+HIDZTV therefore treats upstream availability separately from application readiness: the application, resolver, proxy, failover logic, and deployment configuration are prepared for production, while the continued availability of third-party upstream streams remains outside HIDZTV's control.
