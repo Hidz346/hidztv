@@ -24,7 +24,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CATEGORY_COUNTS, CATEGORY_LABELS, CHANNELS, type Channel, type ChannelCategory } from '@/lib/channels';
 
-type ServerId = 'lite' | 'fast' | 'max' | 'embed';
+type ServerId = 'nanzstream';
 type Filter = 'all' | ChannelCategory;
 
 type Profile = {
@@ -38,13 +38,10 @@ type Profile = {
 };
 
 const SERVERS: Profile[] = [
-  { id: 'lite', label: 'Lite', note: 'Hemat data', sourceIndex: 0, maxBuffer: 9, backBuffer: 12, liveSyncDurationCount: 2 },
-  { id: 'fast', label: 'Fast', note: 'Cepat mulai', sourceIndex: 0, maxBuffer: 14, backBuffer: 18, liveSyncDurationCount: 2 },
-  { id: 'max', label: 'Max', note: 'Buffer tebal', sourceIndex: 1, maxBuffer: 28, backBuffer: 45, liveSyncDurationCount: 3 },
-  { id: 'embed', label: 'Embed', note: 'Provider resmi', sourceIndex: 0, maxBuffer: 14, backBuffer: 18, liveSyncDurationCount: 3 },
+  { id: 'nanzstream', label: 'NanzStream', note: 'Source dari APK NanzStream', sourceIndex: 0, maxBuffer: 14, backBuffer: 18, liveSyncDurationCount: 2 },
 ];
 
-const profileOf = (id: ServerId) => SERVERS.find((item) => item.id === id) ?? SERVERS[1];
+const profileOf = () => SERVERS[0];
 
 function ChannelThumb({ channel }: { channel: Channel }) {
   return (
@@ -69,8 +66,7 @@ export default function HidzTV() {
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState('gtv');
-  const [server, setServer] = useState<ServerId>('fast');
-  const [serverSheet, setServerSheet] = useState(false);
+  const [server] = useState<ServerId>('nanzstream');
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
   const [status, setStatus] = useState<'idle' | 'connecting' | 'live' | 'fallback' | 'error' | 'embed'>('idle');
@@ -97,6 +93,7 @@ export default function HidzTV() {
     const value = query.trim().toLowerCase();
 
     return CHANNELS.filter((channel) => {
+      if (!channel.sources.length) return false;
       const categoryMatch = filter === 'all' || channel.category === filter;
       const searchMatch =
         !value ||
@@ -130,22 +127,6 @@ export default function HidzTV() {
     video.load();
   };
 
-  const openProvider = () => {
-    if (currentSelected.providerUrl) {
-      window.open(currentSelected.providerUrl, '_blank', 'noopener,noreferrer');
-    }
-  };
-
-  const providerPlayback = () => {
-    clearTimeoutRef();
-    destroyHls();
-    resetVideo();
-    setPlaying(false);
-    setQuality('Provider');
-    setStatus('embed');
-    setMessage('');
-  };
-
   const sourcesFor = (profile: Profile) => {
     const hasRuntimeResolver = runtimeSourcesRef.current.length > 0;
     const available = hasRuntimeResolver ? runtimeSourcesRef.current : currentSelected.sources;
@@ -155,11 +136,7 @@ export default function HidzTV() {
       return [available[0], ...available.slice(1)];
     }
 
-    const preferredIndex = Math.min(profile.sourceIndex, available.length - 1);
-    return [
-      available[preferredIndex],
-      ...available.filter((_, index) => index !== preferredIndex),
-    ];
+    return available;
   };
 
   const loadSource = (url: string, profile: Profile) => {
@@ -186,12 +163,8 @@ export default function HidzTV() {
         return;
       }
 
-      if (currentSelected.providerUrl) {
-        providerPlayback();
-      } else {
-        setStatus('error');
-        setMessage('Semua sumber stream gagal dimuat.');
-      }
+      setStatus('error');
+      setMessage('Semua source NanzStream gagal dimuat.');
     };
 
     timeoutRef.current = setTimeout(failed, 10000);
@@ -285,16 +258,6 @@ export default function HidzTV() {
     runtimeSourcesRef.current = [];
     setSourceCount(currentSelected.sources.length);
 
-    if (server === 'embed') {
-      if (currentSelected.providerUrl) {
-        providerPlayback();
-      } else {
-        setStatus('error');
-        setMessage('Provider resmi belum tersedia untuk channel ini.');
-      }
-      return;
-    }
-
     const profile = profileOf(server);
     setStatus('connecting');
     setMessage('Mencari source Live TV…');
@@ -318,12 +281,8 @@ export default function HidzTV() {
     const sources = sourcesFor(profile);
 
     if (!sources.length) {
-      if (currentSelected.providerUrl) {
-        providerPlayback();
-      } else {
-        setStatus('error');
-        setMessage('Channel belum memiliki sumber playback.');
-      }
+      setStatus('error');
+      setMessage('Channel belum memiliki source NanzStream.');
       return;
     }
 
@@ -379,8 +338,6 @@ export default function HidzTV() {
     }
   };
 
-  const embedMode = status === 'embed' && Boolean(currentSelected.providerUrl);
-
   return (
     <main className="min-h-screen">
       <header className="sticky top-0 z-50 border-b border-white/8 bg-[#090909]/92 backdrop-blur-xl">
@@ -419,23 +376,12 @@ export default function HidzTV() {
       <section className="mx-auto max-w-6xl px-4 pb-10 pt-5 sm:px-6 sm:pt-6">
         <div ref={playerRef} className="player-shell relative">
           <div className="aspect-video bg-black">
-            {embedMode ? (
-              <iframe
-                key={currentSelected.providerUrl}
-                src={currentSelected.providerUrl}
-                title={currentSelected.name + ' provider'}
-                className="h-full w-full border-0"
-                allow="autoplay; fullscreen; picture-in-picture"
-                referrerPolicy="strict-origin-when-cross-origin"
-              />
-            ) : (
-              <video
+            <video
                 ref={videoRef}
                 playsInline
                 preload="metadata"
                 className="h-full w-full object-contain"
-              />
-            )}
+            />
           </div>
 
           <div className="absolute inset-x-0 top-0 flex justify-between bg-gradient-to-b from-black/75 to-transparent p-3 sm:p-4">
@@ -451,7 +397,7 @@ export default function HidzTV() {
 
             <div className="flex gap-2 text-[9px] text-white/55">
               <span className="rounded-full bg-black/40 px-2 py-1">{quality}</span>
-              {!embedMode && <span className="rounded-full bg-black/40 px-2 py-1">SRC {sourceNumber}</span>}
+              <span className="rounded-full bg-black/40 px-2 py-1">SRC {sourceNumber}</span>
             </div>
           </div>
 
@@ -475,28 +421,8 @@ export default function HidzTV() {
                   <button onClick={loadStream} className="rounded-xl bg-white px-4 py-2 text-[11px] font-black uppercase text-black">
                     Coba lagi
                   </button>
-                  {currentSelected.providerUrl && (
-                    <button
-                      onClick={openProvider}
-                      className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-[#1b1b1b] px-4 py-2 text-[11px] font-black uppercase text-white"
-                    >
-                      <ExternalLink size={13} />
-                      Provider resmi
-                    </button>
-                  )}
                 </div>
               </div>
-            </div>
-          )}
-
-          {embedMode && (
-            <div className="absolute inset-x-0 bottom-12 flex justify-center px-4 sm:bottom-16">
-              <button
-                onClick={openProvider}
-                className="inline-flex items-center gap-2 rounded-full bg-black/70 px-4 py-2 text-[10px] font-black uppercase tracking-[.12em] text-white backdrop-blur-md"
-              >
-                <ExternalLink size={13} /> Buka provider
-              </button>
             </div>
           )}
 
@@ -524,118 +450,10 @@ export default function HidzTV() {
             <div className="flex items-center gap-2">
               <div className="hidden items-center gap-1 rounded-full bg-white/8 p-1 md:flex">
                 {SERVERS.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => setServer(item.id)}
-                    className={
-                      server === item.id
-                        ? 'rounded-full bg-white px-3 py-1.5 text-[10px] font-bold text-black'
-                        : 'rounded-full px-3 py-1.5 text-[10px] font-bold text-white/60'
-                    }
-                  >
+                  <span key={item.id} className="rounded-full bg-white px-3 py-1.5 text-[10px] font-bold text-black">
                     {item.label}
-                  </button>
+                  </span>
                 ))}
-              </div>
-
-              <button
-                onClick={() => setServerSheet(true)}
-                className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white md:hidden"
-                aria-label="Pilih server"
-              >
-                <Settings2 size={16} />
-              </button>
-
-              <button
-                onClick={toggleFullscreen}
-                className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white"
-                aria-label="Fullscreen"
-              >
-                <Maximize2 size={16} />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-3 flex flex-wrap gap-2 text-[9px] uppercase tracking-[.14em] text-zinc-500">
-          <span className="rounded-full border border-white/8 bg-[#101010] px-3 py-1.5">Server {profileOf(server).label}</span>
-          <span className="rounded-full border border-white/8 bg-[#101010] px-3 py-1.5">{profileOf(server).note}</span>
-          <span className="rounded-full border border-white/8 bg-[#101010] px-3 py-1.5">
-            {sourceCount ? 'Source ' + sourceNumber + '/' + sourceCount : 'Provider resmi'}
-          </span>
-        </div>
-
-        <div className="mt-5 flex items-start justify-between gap-3">
-          <div>
-            <h1 className="text-[22px] font-black">{currentSelected.name}</h1>
-            <p className="mt-1 text-[11px] text-zinc-500">
-              CH {currentSelected.number} · {currentSelected.category === 'national' ? 'Nasional' : currentSelected.region}
-            </p>
-          </div>
-
-          {currentSelected.providerUrl && (
-            <button
-              onClick={openProvider}
-              className="hidden shrink-0 items-center gap-2 rounded-xl border border-white/10 bg-[#141414] px-3 py-2 text-[10px] font-bold text-zinc-300 sm:flex"
-            >
-              <ExternalLink size={13} /> Provider
-            </button>
-          )}
-        </div>
-
-        <div className="mt-5 flex gap-2 overflow-x-auto pb-1 hidz-scrollbar">
-          {SERVERS.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setServer(item.id)}
-              className={
-                server === item.id
-                  ? 'shrink-0 rounded-full border border-white bg-white px-4 py-2 text-[10px] font-bold uppercase tracking-[.13em] text-black'
-                  : 'shrink-0 rounded-full border border-white/10 bg-[#131313] px-4 py-2 text-[10px] font-bold uppercase tracking-[.13em] text-zinc-400'
-              }
-            >
-              Server {item.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="relative mt-5">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" size={17} />
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Cari saluran (contoh: GTV, SCTV, CNN)…"
-            className="h-12 w-full rounded-2xl border border-white/10 bg-[#141414] pl-11 pr-4 text-[12px] outline-none placeholder:text-zinc-600 focus:border-white/20"
-          />
-        </div>
-
-        <div className="mt-4 flex gap-2 overflow-x-auto pb-1 hidz-scrollbar">
-          {[
-            ['all', 'Semua', Tv],
-            ['national', 'Nasional', MonitorPlay],
-            ['international', 'Internasional', Globe2],
-            ['entertainment', 'Hiburan & Sport', Clapperboard],
-            ['kids', 'Kids', Baby],
-            ['religion', 'Religi', Heart],
-          ].map(([id, label, Icon]) => {
-            const IconComponent = Icon as typeof Tv;
-            const count = CATEGORY_COUNTS[id as keyof typeof CATEGORY_COUNTS];
-
-            return (
-              <button
-                key={String(id)}
-                onClick={() => setFilter(id as Filter)}
-                className={
-                  filter === id
-                    ? 'flex shrink-0 items-center gap-2 rounded-full border border-white bg-white px-4 py-2.5 text-[11px] font-bold text-black'
-                    : 'flex shrink-0 items-center gap-2 rounded-full border border-white/10 bg-[#141414] px-4 py-2.5 text-[11px] font-bold text-zinc-400'
-                }
-              >
-                <IconComponent size={15} />
-                {String(label)} ({count})
-              </button>
-            );
-          })}
         </div>
 
         <div className="mt-6">
@@ -672,42 +490,6 @@ export default function HidzTV() {
           ))}
         </div>
       </section>
-
-      {serverSheet && (
-        <div
-          className="fixed inset-0 z-[100] flex items-end bg-black/75 p-3 backdrop-blur-sm"
-          onClick={() => setServerSheet(false)}
-        >
-          <div
-            className="glass-card w-full rounded-3xl p-4"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="mb-3 text-sm font-bold">Pilih server player</div>
-            <div className="grid grid-cols-2 gap-2">
-              {SERVERS.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setServer(item.id);
-                    setServerSheet(false);
-                  }}
-                  className={
-                    server === item.id
-                      ? 'rounded-2xl border border-white bg-white p-4 text-left text-black'
-                      : 'rounded-2xl border border-white/10 bg-[#141414] p-4 text-left'
-                  }
-                >
-                  <div className="text-sm font-black">Server {item.label}</div>
-                  <div className={server === item.id ? 'mt-1 text-[10px] text-black/60' : 'mt-1 text-[10px] text-zinc-500'}>
-                    {item.note}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
       {details && (
         <div
           className="fixed inset-0 z-[100] grid place-items-center bg-black/75 p-4 backdrop-blur-sm"
@@ -736,7 +518,7 @@ export default function HidzTV() {
       )}
 
       <footer className="pb-10 text-center text-[9px] uppercase tracking-[.16em] text-zinc-700">
-        HIDZTV · 2026 · LIVE SOURCES DEPEND ON UPSTREAM PROVIDERS
+        HIDZTV · 2026 · NANZSTREAM APK LIVE SOURCES
       </footer>
     </main>
   );
