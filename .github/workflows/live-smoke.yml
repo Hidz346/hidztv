@@ -1,0 +1,83 @@
+name: HIDZTV Live Smoke Test
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Vercel deployment
+        run: |
+          set -e
+          for i in $(seq 1 30); do
+            code=$(curl -L -s -o /tmp/home.txt -w "%{http_code}" --max-time 15 https://hidztv-com.vercel.app/)
+            if [ "$code" = "200" ]; then
+              echo "Production site reachable."
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $code"
+            sleep 10
+          done
+          echo "Production site did not become reachable."
+          exit 1
+
+      - name: Test Live TV resolver and HLS proxy
+        run: |
+          node <<'NODE'
+          const channels = ['iNews HD', 'TVRI Nasional', 'DAAI TV HD', 'RCTI HD'];
+
+          async function main() {
+            for (const channel of channels) {
+              const api = 'https://hidztv-com.vercel.app/api/live-tv?channel=' + encodeURIComponent(channel);
+              const response = await fetch(api, { cache: 'no-store' });
+              const text = await response.text();
+
+              console.log('\n=== ' + channel + ' ===');
+              console.log('API status:', response.status);
+              console.log('API body:', text.slice(0, 1200));
+
+              if (!response.ok) {
+                throw new Error(channel + ': API failed');
+              }
+
+              const data = JSON.parse(text);
+              const sources = Array.isArray(data.sources) ? data.sources : [];
+
+              if (!data.ok || !sources.length) {
+                throw new Error(channel + ': no sources returned');
+              }
+
+              const proxy = sources.find((value) =>
+                typeof value === 'string' && value.includes('/api/live-tv/proxy?u=')
+              );
+
+              if (!proxy) {
+                throw new Error(channel + ': proxy source missing');
+              }
+
+              const manifest = await fetch(proxy, {
+                headers: { 'User-Agent': 'Mozilla/5.0 HIDZTV-SmokeTest/1.0' },
+                cache: 'no-store',
+              });
+
+              const body = await manifest.text();
+              console.log('Proxy status:', manifest.status);
+              console.log('Proxy content-type:', manifest.headers.get('content-type'));
+              console.log('Proxy body:', body.slice(0, 500));
+
+              if (!manifest.ok || !body.includes('#EXTM3U')) {
+                throw new Error(channel + ': proxy did not return a valid HLS manifest');
+              }
+            }
+
+            console.log('\nLIVE SMOKE TEST PASSED');
+          }
+
+          main().catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
