@@ -2,10 +2,13 @@
 
 import Hls from 'hls.js';
 import {
+  Baby,
   ChevronRight,
   CircleUserRound,
+  Clapperboard,
   ExternalLink,
   Globe2,
+  HeartHandshake,
   House,
   Maximize2,
   MonitorPlay,
