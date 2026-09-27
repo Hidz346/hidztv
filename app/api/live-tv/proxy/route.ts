@@ -35,11 +35,11 @@ const ALLOWED_SUFFIXES = [
 ];
 
 function isPrivateHostname(hostname: string) {
-  const host = hostname.toLowerCase().replace(/^\\[|\\]$/g, '');
+  const host = hostname.toLowerCase().replace(/^\[|\]$/g, '');
   if (host === 'localhost' || host.endsWith('.localhost') || host === '::1') return true;
-  if (/^127\\./.test(host) || /^10\\./.test(host) || /^192\\.168\\./.test(host)) return true;
-  if (/^172\\.(1[6-9]|2\\d|3[0-1])\\./.test(host)) return true;
-  if (/^169\\.254\\./.test(host) || host === '0.0.0.0') return true;
+  if (/^127\./.test(host) || /^10\./.test(host) || /^192\.168\./.test(host)) return true;
+  if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(host)) return true;
+  if (/^169\.254\./.test(host) || host === '0.0.0.0') return true;
   if (host === 'metadata.google.internal' || host === 'metadata.google') return true;
   return false;
 }
@@ -56,7 +56,7 @@ function proxyUrl(origin: string, target: string) {
 
 function looksLikeManifest(contentType: string, targetUrl: URL) {
   const type = contentType.toLowerCase();
-  const pathLooksLikeManifest = /\\.m3u8(?:$|[?#])/i.test(targetUrl.pathname + targetUrl.search);
+  const pathLooksLikeManifest = /\.m3u8(?:$|[?#])/i.test(targetUrl.pathname + targetUrl.search);
   const genericText = type.includes('text/plain') || type.includes('application/octet-stream');
 
   return (
