@@ -194,6 +194,7 @@ export async function GET(request: NextRequest) {
   // NanzStream's APK uses the Transvision channel-list API for the live
   // catalogue. Prefer that dynamic resolver over recovered static URLs:
   // static HLS addresses can remain present while already being offline.
+  if (process.env.ENABLE_TRANSVISION_RESOLVER === 'true') {
   try {
     const resolved = await resolveTransvisionStream(input);
     const uniqueUrls = [...new Set(resolved.urls)];
@@ -210,6 +211,7 @@ export async function GET(request: NextRequest) {
       { headers: { 'Cache-Control': 'no-store' } },
     );
   } catch {}
+  }
 
   // Only use recovered APK URLs as a fallback when the live catalogue
   // cannot be resolved.
