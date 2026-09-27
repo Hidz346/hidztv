@@ -612,7 +612,7 @@ export default function HidzTV() {
         <div className="mt-6">
           <h2 className="text-[18px] font-black">Daftar Saluran ({visibleChannels.length})</h2>
           <p className="mt-1 text-[10px] text-zinc-500">
-            Kategori: {filter === 'all' ? 'Semua' : filter === 'national' ? 'Nasional' : 'Internasional'}
+            Kategori: {filter === 'all' ? 'Semua' : CATEGORY_LABELS[filter]}
           </p>
         </div>
 
