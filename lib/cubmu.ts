@@ -175,7 +175,7 @@ export async function resolveCubMuChannel(input: string): Promise<CubMuChannel> 
 
   const exact = channels.find((channel) => {
     const candidates = [channel.channel_name, channel.slug_url, String(channel.channel_id ?? '')]
-      .filter(Boolean)
+      .filter((value): value is string => Boolean(value))
       .map(normalize);
     return candidates.includes(needle);
   });
