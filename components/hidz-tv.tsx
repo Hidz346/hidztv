@@ -19,10 +19,10 @@ import {
   VolumeX,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CHANNELS, INTERNATIONAL_COUNT, NATIONAL_COUNT, type Channel } from '@/lib/channels';
+import { CATEGORY_COUNTS, CATEGORY_LABELS, CHANNELS, type Channel, type ChannelCategory } from '@/lib/channels';
 
 type ServerId = 'lite' | 'fast' | 'max' | 'embed';
-type Filter = 'all' | 'national' | 'international';
+type Filter = 'all' | ChannelCategory;
 
 type Profile = {
   id: ServerId;
@@ -65,7 +65,7 @@ function ChannelThumb({ channel }: { channel: Channel }) {
 export default function HidzTV() {
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
-  const [selectedId, setSelectedId] = useState('tvri');
+  const [selectedId, setSelectedId] = useState('gtv');
   const [server, setServer] = useState<ServerId>('fast');
   const [serverSheet, setServerSheet] = useState(false);
   const [playing, setPlaying] = useState(false);
@@ -579,11 +579,15 @@ export default function HidzTV() {
 
         <div className="mt-4 flex gap-2 overflow-x-auto pb-1 hidz-scrollbar">
           {[
-            ['all', 'Semua (' + CHANNELS.length + ')', Tv],
-            ['national', 'Nasional (' + NATIONAL_COUNT + ')', MonitorPlay],
-            ['international', 'Internasional (' + INTERNATIONAL_COUNT + ')', Globe2],
+            ['all', 'Semua', Tv],
+            ['national', 'Nasional', MonitorPlay],
+            ['international', 'Internasional', Globe2],
+            ['entertainment', 'Hiburan & Sport', Clapperboard],
+            ['kids', 'Kids', Baby],
+            ['religion', 'Religi', HeartHandshake],
           ].map(([id, label, Icon]) => {
             const IconComponent = Icon as typeof Tv;
+            const count = CATEGORY_COUNTS[id as keyof typeof CATEGORY_COUNTS];
 
             return (
               <button
@@ -596,7 +600,7 @@ export default function HidzTV() {
                 }
               >
                 <IconComponent size={15} />
-                {String(label)}
+                {String(label)} ({count})
               </button>
             );
           })}
