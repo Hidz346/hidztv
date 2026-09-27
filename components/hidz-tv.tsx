@@ -78,7 +78,7 @@ export default function HidzTV() {
   const [sourceNumber, setSourceNumber] = useState(1);
   const [quality, setQuality] = useState('Auto');
   const [details, setDetails] = useState(false);
-  const [sourceCount, setSourceCount] = useState(currentSelected?.sources.length ?? 0);
+  const [sourceCount, setSourceCount] = useState(0);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<HTMLDivElement>(null);
