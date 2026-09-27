@@ -47,7 +47,7 @@ function collectStreamUrls(value: unknown, out: string[] = [], depth = 0, hinted
 
   if (typeof value === 'string') {
     const trimmed = value.trim();
-    if (/^https?:\/\//i.test(trimmed) && /\.(m3u8|mpd)(?:[?#]|$)/i.test(trimmed)) {
+    if (/^https?:\/\//i.test(trimmed) && (hinted || /\.(m3u8|mpd)(?:[?#]|$)/i.test(trimmed))) {
       out.push(trimmed);
     }
     return out;
