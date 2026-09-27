@@ -163,6 +163,124 @@ function sourceList(origin: string, urls: string[]) {
   ]);
 }
 
+type PublicIptvEntry = {
+  name: string;
+  tvgId: string;
+  url: string;
+};
+
+let publicIptvCache: { expiresAt: number; entries: PublicIptvEntry[] } | null = null;
+
+async function getPublicIptvEntries() {
+  if (publicIptvCache && publicIptvCache.expiresAt > Date.now()) {
+    return publicIptvCache.entries;
+  }
+
+  const response = await fetch('https://iptv-org.github.io/iptv/streams/id.m3u', {
+    headers: {
+      Accept: 'text/plain,*/*',
+      'User-Agent': 'HIDZTV/1.0',
+    },
+    cache: 'no-store',
+    signal: AbortSignal.timeout(12_000),
+  });
+
+  if (!response.ok) throw new Error('Public IPTV catalogue unavailable');
+
+  const text = await response.text();
+  const lines = text.split(/\r?\n/);
+  const entries: PublicIptvEntry[] = [];
+
+  let current: { name: string; tvgId: string } | null = null;
+
+  for (const line of lines) {
+    const value = line.trim();
+    if (!value) continue;
+
+    if (value.startsWith('#EXTINF:')) {
+      const comma = value.indexOf(',');
+      const attributes = comma >= 0 ? value.slice(0, comma) : value;
+      const name = comma >= 0 ? value.slice(comma + 1).trim() : '';
+
+      const tvgId = attributes.match(/tvg-id="([^"]*)"/i)?.[1] ?? '';
+      current = { name, tvgId };
+      continue;
+    }
+
+    if (current && /^https?:\/\//i.test(value)) {
+      entries.push({
+        name: current.name,
+        tvgId: current.tvgId,
+        url: value,
+      });
+      current = null;
+    }
+  }
+
+  publicIptvCache = {
+    expiresAt: Date.now() + 5 * 60 * 1000,
+    entries,
+  };
+
+  return entries;
+}
+
+async function probeManifest(url: string) {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Accept: 'application/vnd.apple.mpegurl, application/x-mpegURL, */*',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0 Safari/537.36',
+      },
+      cache: 'no-store',
+      redirect: 'follow',
+      signal: AbortSignal.timeout(7_000),
+    });
+
+    if (!response.ok) return false;
+
+    const type = (response.headers.get('content-type') || '').toLowerCase();
+    if (type.includes('mpegurl')) return true;
+
+    const text = await response.text();
+    return /#EXTM3U/i.test(text);
+  } catch {
+    return false;
+  }
+}
+
+async function resolvePublicIptvStream(input: string) {
+  const needle = normalize(input);
+  if (!needle) return [];
+
+  const entries = await getPublicIptvEntries();
+
+  const candidates = entries.filter((entry) => {
+    const name = normalize(entry.name);
+    const tvgId = normalize(entry.tvgId);
+    const channelId = normalize(input);
+
+    return (
+      name === needle ||
+      tvgId === needle ||
+      tvgId.replace(/\.id\b/g, '') === channelId ||
+      (name && channelId && name.includes(channelId) && channelId.length >= 4)
+    );
+  });
+
+  if (!candidates.length) return [];
+
+  const checks = await Promise.all(
+    candidates.slice(0, 5).map(async (entry) => ({
+      entry,
+      ok: await probeManifest(entry.url),
+    })),
+  );
+
+  return checks.filter((item) => item.ok).map((item) => item.entry.url);
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const input = searchParams.get('channel')?.trim();
@@ -219,6 +337,40 @@ export async function GET(request: NextRequest) {
     ...(staticChannel?.sources ?? []),
     ...(direct ? [direct.stream_url] : []),
   ];
+
+  let publicUrls: string[] = [];
+  try {
+    publicUrls = await resolvePublicIptvStream(input);
+  } catch {}
+
+  const candidateUrls = [...new Set([...publicUrls, ...resolvedUrls])];
+  const verifiedUrls: string[] = [];
+
+  for (const url of candidateUrls.slice(0, 6)) {
+    if (await probeManifest(url)) verifiedUrls.push(url);
+  }
+
+  if (verifiedUrls.length) {
+    return NextResponse.json(
+      {
+        ok: true,
+        server: publicUrls.length ? 'public-current-plus-apk' : 'nanzstream-apk-verified',
+        channel: staticChannel
+          ? {
+              id: staticChannel.id,
+              channel_id: staticChannel.id,
+              channel_name: staticChannel.name,
+              channel_number: staticChannel.number,
+              genre_name: staticChannel.category,
+            }
+          : direct,
+        manifestUrl: verifiedUrls[0],
+        playbackUrl: playbackUrl(origin, verifiedUrls[0]),
+        sources: sourceList(origin, verifiedUrls),
+      },
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
+  }
 
   if (resolvedUrls.length) {
     const uniqueUrls = [...new Set(resolvedUrls)];
