@@ -98,6 +98,8 @@ function collectCandidates(
     return output;
   }
 
+  if (typeof value !== 'object') return output;
+
   const names = getObjectNames(value);
   const nameMatch = Boolean(
     needle && names.some(
