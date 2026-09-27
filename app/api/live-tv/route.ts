@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { resolveNanzStreamTv } from '@/lib/nanzstream-tv';
-import { resolveCubMuStream, getCubMuChannels } from '@/lib/cubmu';
+import {
+  getNanzStreamTvChannels,
+  resolveNanzStreamDirect,
+} from '@/lib/nanzstream-tv';
+import { resolveCubMuStream } from '@/lib/cubmu';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -8,47 +11,47 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const input = searchParams.get('channel')?.trim();
+  const origin = new URL(request.url).origin;
 
   if (!input) {
-    try {
-      return NextResponse.json({ ok: true, channels: await getCubMuChannels() });
-    } catch {
-      return NextResponse.json({ ok: true, channels: [] });
-    }
-  }
-
-  // NanzStream is the primary source. The API base URL is recovered from
-  // the supplied NanzStream APK; the adapter tolerates the known TV route
-  // variants without hard-coding a single response schema.
-  const nanz = await resolveNanzStreamTv(input);
-
-  if (nanz.ok) {
-    let playbackUrl = nanz.playbackUrl;
-
-    try {
-      const upstream = new URL(nanz.playbackUrl);
-      if (upstream.hostname === 'nanzstream-api.vercel.app') {
-        const origin = new URL(request.url).origin;
-        playbackUrl = origin + '/api/live-tv/proxy?u=' + encodeURIComponent(nanz.playbackUrl);
-      }
-    } catch {
-      // Leave the API response untouched; the player will handle it as a normal source.
-    }
-
     return NextResponse.json({
       ok: true,
-      playbackUrl,
-      server: 'nanzstream-primary',
-      endpoint: nanz.endpoint,
+      channels: getNanzStreamTvChannels().map((channel) => ({
+        ...channel,
+        playbackUrl:
+          origin +
+          '/api/live-tv/proxy?u=' +
+          encodeURIComponent(channel.stream_url),
+      })),
+      server: 'nanzstream-apk',
     });
   }
 
-  // Keep the existing CubMu resolver as a compatibility fallback so a
-  // temporary NanzStream API outage does not break the whole TV player.
+  const direct = resolveNanzStreamDirect(input);
+
+  if (direct) {
+    const playbackUrl =
+      origin +
+      '/api/live-tv/proxy?u=' +
+      encodeURIComponent(direct.stream_url);
+
+    return NextResponse.json({
+      ok: true,
+      channel: direct,
+      manifestUrl: direct.stream_url,
+      playbackUrl,
+      server: 'nanzstream-apk',
+    });
+  }
+
+  // Keep the existing CubMu resolver as a fallback for channels that are
+  // not present in the recovered NanzStream Live TV catalogue.
   try {
     const resolved = await resolveCubMuStream(input);
-    const origin = new URL(request.url).origin;
-    const proxyUrl = origin + '/api/live-tv/proxy?u=' + encodeURIComponent(resolved.manifestUrl);
+    const proxyUrl =
+      origin +
+      '/api/live-tv/proxy?u=' +
+      encodeURIComponent(resolved.manifestUrl);
 
     return NextResponse.json({
       ok: true,
@@ -58,13 +61,15 @@ export async function GET(request: NextRequest) {
       server: 'cubmu-fallback',
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Live TV resolver failed';
-    return NextResponse.json({
-      ok: false,
-      error: message,
-      nanzstream: {
-        attempted: nanz.attempted,
+    const message =
+      error instanceof Error ? error.message : 'Live TV resolver failed';
+
+    return NextResponse.json(
+      {
+        ok: false,
+        error: message,
       },
-    }, { status: 502 });
+      { status: 502 },
+    );
   }
 }
