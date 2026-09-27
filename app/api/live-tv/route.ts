@@ -71,35 +71,53 @@ function collectStreamUrls(value: unknown, out: string[] = [], depth = 0, hinted
   return out;
 }
 
-function findMatchingChannel(value: unknown, needle: string, depth = 0): unknown {
-  if (depth > 8 || value == null) return null;
+function getChannelNames(value: Record<string, unknown>) {
+  return [
+    'channelTitle',
+    'channel_title',
+    'channelName',
+    'channel_name',
+    'displayName',
+    'display_name',
+    'shortName',
+    'short_name',
+    'name',
+    'title',
+    'slug',
+    'channelId',
+    'channel_id',
+    'id',
+  ]
+    .map((key) => normalizeChannelName(value[key]))
+    .filter(Boolean);
+}
+
+function findExactChannelWithStream(value: unknown, needle: string, depth = 0): Record<string, unknown> | null {
+  if (depth > 10 || value == null) return null;
 
   if (Array.isArray(value)) {
     for (const item of value) {
-      const found = findMatchingChannel(item, needle, depth + 1);
+      const found = findExactChannelWithStream(item, needle, depth + 1);
       if (found) return found;
     }
     return null;
   }
 
-  if (typeof value === 'object') {
-    const object = value as Record<string, unknown>;
-    const nameFields = ['name', 'channel_name', 'channelName', 'title', 'display_name', 'displayName'];
-    const names = nameFields
-      .map((key) => object[key])
-      .filter((item): item is string => typeof item === 'string')
-      .map(normalizeChannelName);
+  if (typeof value !== 'object') return null;
 
-    if (names.some((name) => name === needle || name.includes(needle) || needle.includes(name))) {
-      return object;
-    }
+  const object = value as Record<string, unknown>;
+  const names = getChannelNames(object);
 
-    for (const child of Object.values(object)) {
-      if (typeof child === 'object') {
-        const found = findMatchingChannel(child, needle, depth + 1);
-        if (found) return found;
-      }
-    }
+  if (names.some((name) => name === needle)) {
+    const urls = collectStreamUrls(object);
+    if (urls.length) return object;
+  }
+
+  for (const child of Object.values(object)) {
+    if (typeof child !== 'object') continue;
+
+    const found = findExactChannelWithStream(child, needle, depth + 1);
+    if (found) return found;
   }
 
   return null;
@@ -124,10 +142,13 @@ async function resolveTransvisionStream(input: string) {
   if (!response.ok) throw new Error('Transvision channel list unavailable');
 
   const payload = await response.json();
-  const match = findMatchingChannel(payload, needle);
+  const match = findExactChannelWithStream(payload, needle);
+
+  if (!match) throw new Error('Exact channel stream not found');
+
   const urls = [...new Set(collectStreamUrls(match))];
 
-  if (!urls.length) throw new Error('No HLS source in matched Transvision channel');
+  if (!urls.length) throw new Error('No HLS source in exact channel match');
 
   return {
     channel: match,
