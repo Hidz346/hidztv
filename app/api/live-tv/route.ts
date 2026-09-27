@@ -42,7 +42,7 @@ function normalizeChannelName(value: unknown) {
   return typeof value === 'string' ? normalize(value) : '';
 }
 
-function collectStreamUrls(value: unknown, out: string[] = [], depth = 0): string[] {
+function collectStreamUrls(value: unknown, out: string[] = [], depth = 0, hinted = false): string[] {
   if (depth > 8 || value == null) return out;
 
   if (typeof value === 'string') {
@@ -61,7 +61,7 @@ function collectStreamUrls(value: unknown, out: string[] = [], depth = 0): strin
   if (typeof value === 'object') {
     for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
       if (/^(url|stream|stream_url|streamUrl|playback|playback_url|playbackUrl|manifest|manifest_url|manifestUrl|hls|hls_url|hlsUrl|source|source_url|sourceUrl|play_url|playUrl)$/i.test(key)) {
-        collectStreamUrls(child, out, depth + 1);
+        collectStreamUrls(child, out, depth + 1, /^(url|stream|stream_url|streamUrl|playback|playback_url|playbackUrl|manifest|manifest_url|manifestUrl|hls|hls_url|hlsUrl|source|source_url|sourceUrl|play_url|playUrl)$/i.test(key));
       } else if (typeof child === 'object') {
         collectStreamUrls(child, out, depth + 1);
       }
