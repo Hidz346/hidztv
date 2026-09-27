@@ -42,52 +42,28 @@ function normalizeChannelName(value: unknown) {
   return typeof value === 'string' ? normalize(value) : '';
 }
 
-const STREAM_KEYS = /^(url|stream|stream_url|streamUrl|playback|playback_url|playbackUrl|manifest|manifest_url|manifestUrl|hls|hls_url|hlsUrl|source|source_url|sourceUrl|play_url|playUrl|directHlsUrl|direct_hls_url|backupUrl|backup_url|src)$/i;
-const CHANNEL_NAME_KEYS = [
-  'channelTitle',
-  'channel_title',
-  'channelName',
-  'channel_name',
-  'displayName',
-  'display_name',
-  'shortName',
-  'short_name',
-  'name',
-  'title',
-  'slug',
-];
-
 function collectStreamUrls(value: unknown, out: string[] = [], depth = 0, hinted = false): string[] {
   if (depth > 8 || value == null) return out;
 
   if (typeof value === 'string') {
     const trimmed = value.trim();
-
-    if (
-      /^https?:\/\//i.test(trimmed) &&
-      (
-        hinted ||
-        /\.(m3u8|mpd)(?:[?#]|$)/i.test(trimmed) ||
-        /\/((hls|live|stream|playlist|manifest))(?:\/|[?#]|$)/i.test(trimmed)
-      )
-    ) {
+    if (/^https?:\/\//i.test(trimmed) && (hinted || /\.(m3u8|mpd)(?:[?#]|$)/i.test(trimmed))) {
       out.push(trimmed);
     }
-
     return out;
   }
 
   if (Array.isArray(value)) {
-    for (const item of value) collectStreamUrls(item, out, depth + 1, hinted);
+    for (const item of value) collectStreamUrls(item, out, depth + 1);
     return out;
   }
 
   if (typeof value === 'object') {
     for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
-      if (STREAM_KEYS.test(key)) {
-        collectStreamUrls(child, out, depth + 1, true);
+      if (/^(url|stream|stream_url|streamUrl|playback|playback_url|playbackUrl|manifest|manifest_url|manifestUrl|hls|hls_url|hlsUrl|source|source_url|sourceUrl|play_url|playUrl)$/i.test(key)) {
+        collectStreamUrls(child, out, depth + 1, /^(url|stream|stream_url|streamUrl|playback|playback_url|playbackUrl|manifest|manifest_url|manifestUrl|hls|hls_url|hlsUrl|source|source_url|sourceUrl|play_url|playUrl)$/i.test(key));
       } else if (typeof child === 'object') {
-        collectStreamUrls(child, out, depth + 1, false);
+        collectStreamUrls(child, out, depth + 1);
       }
     }
   }
@@ -95,71 +71,45 @@ function collectStreamUrls(value: unknown, out: string[] = [], depth = 0, hinted
   return out;
 }
 
-function scoreChannelMatch(object: Record<string, unknown>, needle: string) {
-  if (!needle) return 0;
-
-  let best = 0;
-
-  for (const key of CHANNEL_NAME_KEYS) {
-    const value = normalizeChannelName(object[key]);
-    if (!value || value.length < 3) continue;
-
-    if (value === needle) best = Math.max(best, key === 'channelTitle' || key === 'channelName' || key === 'channel_name' ? 120 : 110);
-    else if (needle === value.replace(/\b(tv|televisi)\b/g, '').trim()) best = Math.max(best, 100);
-    else if (value.includes(needle) && needle.length >= 4) best = Math.max(best, 80);
-    else if (needle.includes(value) && value.length >= 4) best = Math.max(best, 70);
-  }
-
-  for (const key of ['channelId', 'channel_id', 'id', 'slug']) {
-    const value = normalizeChannelName(object[key]);
-    if (value && value === needle) best = Math.max(best, 130);
-  }
-
-  return best;
-}
-
-function findBestMatchingChannel(value: unknown, needle: string, depth = 0): Record<string, unknown> | null {
-  if (depth > 10 || value == null) return null;
-
-  let best: { score: number; object: Record<string, unknown> } | null = null;
+function findMatchingChannel(value: unknown, needle: string, depth = 0): unknown {
+  if (depth > 8 || value == null) return null;
 
   if (Array.isArray(value)) {
     for (const item of value) {
-      const candidate = findBestMatchingChannel(item, needle, depth + 1);
-      if (!candidate) continue;
+      const found = findMatchingChannel(item, needle, depth + 1);
+      if (found) return found;
+    }
+    return null;
+  }
 
-      const score = scoreChannelMatch(candidate, needle);
-      if (!best || score > best.score) best = { score, object: candidate };
+  if (typeof value === 'object') {
+    const object = value as Record<string, unknown>;
+    const nameFields = ['name', 'channel_name', 'channelName', 'title', 'display_name', 'displayName'];
+    const names = nameFields
+      .map((key) => object[key])
+      .filter((item): item is string => typeof item === 'string')
+      .map(normalizeChannelName);
+
+    if (names.some((name) => name === needle || name.includes(needle) || needle.includes(name))) {
+      return object;
     }
 
-    return best?.object ?? null;
+    for (const child of Object.values(object)) {
+      if (typeof child === 'object') {
+        const found = findMatchingChannel(child, needle, depth + 1);
+        if (found) return found;
+      }
+    }
   }
 
-  if (typeof value !== 'object') return null;
-
-  const object = value as Record<string, unknown>;
-  const ownScore = scoreChannelMatch(object, needle);
-
-  if (ownScore > 0) {
-    best = { score: ownScore, object };
-  }
-
-  for (const child of Object.values(object)) {
-    if (typeof child !== 'object') continue;
-
-    const candidate = findBestMatchingChannel(child, needle, depth + 1);
-    if (!candidate) continue;
-
-    const childScore = scoreChannelMatch(candidate, needle);
-    if (!best || childScore > best.score) best = { score: childScore, object: candidate };
-  }
-
-  return best?.object ?? null;
+  return null;
 }
 
-async function fetchTransvisionPage(page: number) {
+async function resolveTransvisionStream(input: string) {
+  const needle = normalizeChannelName(input);
+
   const response = await fetch(
-    `https://servicebuss.transvision.co.id/global/v4/channel-list?page=${page}&per_page=50&platform_id=1`,
+    'https://servicebuss.transvision.co.id/global/v4/channel-list?page=1&per_page=50&platform_id=1',
     {
       headers: {
         Accept: 'application/json',
@@ -171,37 +121,10 @@ async function fetchTransvisionPage(page: number) {
     },
   );
 
-  if (!response.ok) throw new Error(`Transvision page ${page} unavailable`);
-  return response.json();
-}
+  if (!response.ok) throw new Error('Transvision channel list unavailable');
 
-async function resolveTransvisionStream(input: string) {
-  const needle = normalizeChannelName(input);
-
-  const payloads = await Promise.allSettled([
-    fetchTransvisionPage(1),
-    fetchTransvisionPage(2),
-  ]);
-
-  const payload = payloads
-    .filter((item): item is PromiseFulfilledResult<unknown> => item.status === 'fulfilled')
-    .map((item) => item.value);
-
-  if (!payload.length) throw new Error('Transvision channel list unavailable');
-
-  const match = payload.reduce<Record<string, unknown> | null>((best, current) => {
-    const candidate = findBestMatchingChannel(current, needle);
-    if (!candidate) return best;
-
-    if (!best) return candidate;
-
-    return scoreChannelMatch(candidate, needle) > scoreChannelMatch(best, needle)
-      ? candidate
-      : best;
-  }, null);
-
-  if (!match) throw new Error('Channel not found in Transvision catalogue');
-
+  const payload = await response.json();
+  const match = findMatchingChannel(payload, needle);
   const urls = [...new Set(collectStreamUrls(match))];
 
   if (!urls.length) throw new Error('No HLS source in matched Transvision channel');
