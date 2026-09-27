@@ -186,9 +186,9 @@ export default function HidzTV() {
         manifestLoadingTimeOut: 5000,
         levelLoadingTimeOut: 5000,
         fragLoadingTimeOut: 5000,
-        manifestLoadingMaxRetry: 0,
-        levelLoadingMaxRetry: 0,
-        fragLoadingMaxRetry: 2,
+        manifestLoadingMaxRetry: 1,
+        levelLoadingMaxRetry: 1,
+        fragLoadingMaxRetry: 1,
       });
 
       hlsRef.current = hls;
@@ -264,15 +264,15 @@ export default function HidzTV() {
     setStatus('connecting');
     setMessage('Menghubungkan ke source Live TV…');
 
-    // Try the recovered APK HLS URL directly first. Going through the Vercel
-    // proxy adds an extra network hop and makes every channel feel slow.
-    // The local proxy remains the fallback for sources that require CORS handling.
+    // Keep HLS requests same-origin first so upstream CORS policies do not
+    // prevent the browser player from loading the manifest and segments.
+    // The original stream URL remains as the fallback.
     const origin = window.location.origin;
-    const directSources = currentSelected.sources;
+    const directSources = currentSelected.sources.filter(Boolean);
     const proxySources = directSources.map(
       (source) => origin + '/api/live-tv/proxy?u=' + encodeURIComponent(source),
     );
-    runtimeSourcesRef.current = [...directSources, ...proxySources];
+    runtimeSourcesRef.current = [...proxySources, ...directSources];
     setSourceCount(runtimeSourcesRef.current.length);
 
     const sources = sourcesFor(profile);
