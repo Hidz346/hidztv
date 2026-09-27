@@ -64,7 +64,7 @@ function ChannelThumb({ channel }: { channel: Channel }) {
 export default function HidzTV() {
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
-  const [selectedId, setSelectedId] = useState('gtv');
+  const [selectedId, setSelectedId] = useState('inews');
   const [server] = useState<ServerId>('nanzstream');
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
@@ -101,6 +101,13 @@ export default function HidzTV() {
       return categoryMatch && searchMatch;
     });
   }, [filter, query]);
+
+  useEffect(() => {
+    if (!visibleChannels.length) return;
+    if (!visibleChannels.some((channel) => channel.id === selectedId)) {
+      setSelectedId(visibleChannels[0].id);
+    }
+  }, [visibleChannels, selectedId]);
 
   const clearTimeoutRef = () => {
     if (timeoutRef.current) {
@@ -163,7 +170,7 @@ export default function HidzTV() {
       }
 
       setStatus('error');
-      setMessage('Semua source NanzStream gagal dimuat.');
+      setMessage('Semua source HLS yang tersedia gagal dimuat.');
     };
 
     timeoutRef.current = setTimeout(failed, 10000);
@@ -281,7 +288,7 @@ export default function HidzTV() {
 
     if (!sources.length) {
       setStatus('error');
-      setMessage('Channel belum memiliki source NanzStream.');
+      setMessage('Channel ini belum memiliki source HLS.');
       return;
     }
 
@@ -414,7 +421,7 @@ export default function HidzTV() {
                 <Signal className="mx-auto text-red-400" size={24} />
                 <div className="mt-3 text-sm font-bold">Stream direct tidak tersedia</div>
                 <p className="mt-2 text-xs leading-relaxed text-zinc-500">
-                  Source HLS NanzStream dapat berubah, offline, atau dibatasi oleh server upstream.
+                  Source HLS dapat berubah, offline, atau dibatasi oleh server upstream.
                 </p>
                 <div className="mt-4 flex flex-wrap justify-center gap-2">
                   <button onClick={loadStream} className="rounded-xl bg-white px-4 py-2 text-[11px] font-black uppercase text-black">
