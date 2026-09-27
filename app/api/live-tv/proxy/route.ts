@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CUBMU_PROXY_HEADERS } from '@/lib/cubmu';
+import { NANZSTREAM_DIRECT_HOSTS } from '@/lib/nanzstream-tv';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -9,6 +10,7 @@ const ALLOWED_HOSTS = new Set([
   'cdnjktbpid22.transvision.co.id',
   'www.cubmu.com',
   'nanzstream-api.vercel.app',
+  ...NANZSTREAM_DIRECT_HOSTS,
 ]);
 
 function isAllowed(url: URL) {
@@ -66,7 +68,9 @@ export async function GET(request: NextRequest) {
     });
 
     if (!upstream.ok || !upstream.body) {
-      return new NextResponse('Upstream stream unavailable', { status: upstream.status || 502 });
+      return new NextResponse('Upstream stream unavailable', {
+        status: upstream.status || 502,
+      });
     }
 
     const contentType = upstream.headers.get('content-type') || '';
@@ -77,7 +81,11 @@ export async function GET(request: NextRequest) {
 
     if (looksLikeManifest) {
       const body = await upstream.text();
-      const rewritten = rewriteManifest(body, targetUrl, request.nextUrl.origin);
+      const rewritten = rewriteManifest(
+        body,
+        targetUrl,
+        request.nextUrl.origin,
+      );
 
       return new NextResponse(rewritten, {
         status: 200,
@@ -98,7 +106,8 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Stream proxy failed';
+    const message =
+      error instanceof Error ? error.message : 'Stream proxy failed';
     return new NextResponse(message, { status: 502 });
   }
 }
