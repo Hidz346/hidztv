@@ -36,6 +36,105 @@ function resolveStaticChannel(input: string) {
   }) ?? null;
 }
 
+
+
+function normalizeChannelName(value: unknown) {
+  return typeof value === 'string' ? normalize(value) : '';
+}
+
+function collectStreamUrls(value: unknown, out: string[] = [], depth = 0): string[] {
+  if (depth > 8 || value == null) return out;
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (/^https?:\/\//i.test(trimmed) && /\.(m3u8|mpd)(?:[?#]|$)/i.test(trimmed)) {
+      out.push(trimmed);
+    }
+    return out;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) collectStreamUrls(item, out, depth + 1);
+    return out;
+  }
+
+  if (typeof value === 'object') {
+    for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+      if (/^(url|stream|stream_url|streamUrl|playback|playback_url|playbackUrl|manifest|manifest_url|manifestUrl|hls|hls_url|hlsUrl|source|source_url|sourceUrl|play_url|playUrl)$/i.test(key)) {
+        collectStreamUrls(child, out, depth + 1);
+      } else if (typeof child === 'object') {
+        collectStreamUrls(child, out, depth + 1);
+      }
+    }
+  }
+
+  return out;
+}
+
+function findMatchingChannel(value: unknown, needle: string, depth = 0): unknown {
+  if (depth > 8 || value == null) return null;
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findMatchingChannel(item, needle, depth + 1);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  if (typeof value === 'object') {
+    const object = value as Record<string, unknown>;
+    const nameFields = ['name', 'channel_name', 'channelName', 'title', 'display_name', 'displayName'];
+    const names = nameFields
+      .map((key) => object[key])
+      .filter((item): item is string => typeof item === 'string')
+      .map(normalizeChannelName);
+
+    if (names.some((name) => name === needle || name.includes(needle) || needle.includes(name))) {
+      return object;
+    }
+
+    for (const child of Object.values(object)) {
+      if (typeof child === 'object') {
+        const found = findMatchingChannel(child, needle, depth + 1);
+        if (found) return found;
+      }
+    }
+  }
+
+  return null;
+}
+
+async function resolveTransvisionStream(input: string) {
+  const needle = normalizeChannelName(input);
+
+  const response = await fetch(
+    'https://servicebuss.transvision.co.id/global/v4/channel-list?page=1&per_page=50&platform_id=1',
+    {
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'NanzStream/1.3.35',
+        Referer: 'https://www.cubmu.com/',
+      },
+      cache: 'no-store',
+      signal: AbortSignal.timeout(10_000),
+    },
+  );
+
+  if (!response.ok) throw new Error('Transvision channel list unavailable');
+
+  const payload = await response.json();
+  const match = findMatchingChannel(payload, needle);
+  const urls = [...new Set(collectStreamUrls(match))];
+
+  if (!urls.length) throw new Error('No HLS source in matched Transvision channel');
+
+  return {
+    channel: match,
+    urls,
+  };
+}
+
 function sourceList(origin: string, urls: string[]) {
   return [...new Set(urls.filter(Boolean))].flatMap((url) => [
     playbackUrl(origin, url),
@@ -98,6 +197,23 @@ export async function GET(request: NextRequest) {
       { headers: { 'Cache-Control': 'no-store' } },
     );
   }
+
+  try {
+    const resolved = await resolveTransvisionStream(input);
+    const uniqueUrls = [...new Set(resolved.urls)];
+
+    return NextResponse.json(
+      {
+        ok: true,
+        server: 'transvision-channel-api',
+        channel: resolved.channel,
+        manifestUrl: uniqueUrls[0],
+        playbackUrl: playbackUrl(origin, uniqueUrls[0]),
+        sources: sourceList(origin, uniqueUrls),
+      },
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
+  } catch {}
 
   if (process.env.CUBMU_EMAIL && process.env.CUBMU_PASSWORD) {
     try {
