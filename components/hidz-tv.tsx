@@ -40,7 +40,7 @@ const SERVERS: Profile[] = [
   { id: 'nanzstream', label: 'NanzStream', note: 'Source dari APK NanzStream', sourceIndex: 0, maxBuffer: 14, backBuffer: 18, liveSyncDurationCount: 2 },
 ];
 
-const profileOf = () => SERVERS[0];
+const profileOf = (_server: ServerId) => SERVERS[0];
 
 function ChannelThumb({ channel }: { channel: Channel }) {
   return (
@@ -453,6 +453,9 @@ export default function HidzTV() {
                     {item.label}
                   </span>
                 ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="mt-6">
@@ -503,7 +506,7 @@ export default function HidzTV() {
 
             <div className="mt-5 space-y-3 text-xs text-zinc-400">
               <div className="rounded-2xl border border-white/8 p-4">
-                Lite, Fast dan Max menggunakan profile buffer/latency yang berbeda pada HLS.
+                Pemutaran menggunakan source Live TV yang tersedia dari katalog NanzStream.
               </div>
               <div className="rounded-2xl border border-white/8 p-4">
                 HidzTV hanya menggunakan source Live TV yang ditemukan dari APK NanzStream.
