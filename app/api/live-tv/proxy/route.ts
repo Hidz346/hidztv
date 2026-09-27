@@ -8,6 +8,7 @@ const ALLOWED_HOSTS = new Set([
   'servicebuss.transvision.co.id',
   'cdnjktbpid22.transvision.co.id',
   'www.cubmu.com',
+  'nanzstream-api.vercel.app',
 ]);
 
 function isAllowed(url: URL) {
