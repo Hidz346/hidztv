@@ -147,8 +147,13 @@ export default function HidzTV() {
   };
 
   const sourcesFor = (profile: Profile) => {
-    const available = runtimeSourcesRef.current.length ? runtimeSourcesRef.current : currentSelected.sources;
+    const hasRuntimeResolver = runtimeSourcesRef.current.length > 0;
+    const available = hasRuntimeResolver ? runtimeSourcesRef.current : currentSelected.sources;
     if (!available.length) return [];
+
+    if (hasRuntimeResolver) {
+      return [available[0], ...available.slice(1)];
+    }
 
     const preferredIndex = Math.min(profile.sourceIndex, available.length - 1);
     return [
