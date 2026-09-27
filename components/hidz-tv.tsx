@@ -92,7 +92,6 @@ export default function HidzTV() {
     const value = query.trim().toLowerCase();
 
     return CHANNELS.filter((channel) => {
-      if (!channel.sources.length) return false;
       const categoryMatch = filter === 'all' || channel.category === filter;
       const searchMatch =
         !value ||
