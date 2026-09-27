@@ -170,34 +170,9 @@ export async function GET(request: NextRequest) {
   const staticChannel = resolveStaticChannel(input);
   const direct = resolveNanzStreamDirect(input);
 
-  const resolvedUrls = [
-    ...(staticChannel?.sources ?? []),
-    ...(direct ? [direct.stream_url] : []),
-  ];
-
-  if (resolvedUrls.length) {
-    const uniqueUrls = [...new Set(resolvedUrls)];
-    return NextResponse.json(
-      {
-        ok: true,
-        server: 'nanzstream-apk',
-        channel: staticChannel
-          ? {
-              id: staticChannel.id,
-              channel_id: staticChannel.id,
-              channel_name: staticChannel.name,
-              channel_number: staticChannel.number,
-              genre_name: staticChannel.category,
-            }
-          : direct,
-        manifestUrl: uniqueUrls[0],
-        playbackUrl: playbackUrl(origin, uniqueUrls[0]),
-        sources: sourceList(origin, uniqueUrls),
-      },
-      { headers: { 'Cache-Control': 'no-store' } },
-    );
-  }
-
+  // NanzStream's APK uses the Transvision channel-list API for the live
+  // catalogue. Prefer that dynamic resolver over recovered static URLs:
+  // static HLS addresses can remain present while already being offline.
   try {
     const resolved = await resolveTransvisionStream(input);
     const uniqueUrls = [...new Set(resolved.urls)];
@@ -214,6 +189,36 @@ export async function GET(request: NextRequest) {
       { headers: { 'Cache-Control': 'no-store' } },
     );
   } catch {}
+
+  // Only use recovered APK URLs as a fallback when the live catalogue
+  // cannot be resolved.
+  const resolvedUrls = [
+    ...(staticChannel?.sources ?? []),
+    ...(direct ? [direct.stream_url] : []),
+  ];
+
+  if (resolvedUrls.length) {
+    const uniqueUrls = [...new Set(resolvedUrls)];
+    return NextResponse.json(
+      {
+        ok: true,
+        server: 'nanzstream-apk-fallback',
+        channel: staticChannel
+          ? {
+              id: staticChannel.id,
+              channel_id: staticChannel.id,
+              channel_name: staticChannel.name,
+              channel_number: staticChannel.number,
+              genre_name: staticChannel.category,
+            }
+          : direct,
+        manifestUrl: uniqueUrls[0],
+        playbackUrl: playbackUrl(origin, uniqueUrls[0]),
+        sources: sourceList(origin, uniqueUrls),
+      },
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
+  }
 
   if (process.env.CUBMU_EMAIL && process.env.CUBMU_PASSWORD) {
     try {
