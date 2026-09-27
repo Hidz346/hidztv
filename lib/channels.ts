@@ -43,7 +43,7 @@ export const CHANNELS: Channel[] = [
   make('rcti', 'RCTI HD', 3, 'national', ['https://mncmedia.malingtv.workers.dev/rcti.m3u8','https://live.rctiplus.id/rctiplus/rcti_360p.m3u8'], 'linear-gradient(135deg,#ef4444,#7f1d1d)', 'https://www.rctiplus.com/tv/rcti'),
   make('sctv', 'SCTV HD', 4, 'national', ['http://op-group1-swiftservehd-1.dens.tv/h/h217/02.m3u8'], 'linear-gradient(135deg,#38bdf8,#1d4ed8)', 'https://www.vidio.com/micro/live/204-sctv'),
   make('indosiar', 'Indosiar HD', 5, 'national', ['http://op-group1-swiftservehd-1.dens.tv/h/h207/index.m3u8'], 'linear-gradient(135deg,#2563eb,#dc2626)', 'https://www.vidio.com/micro/live/205-indosiar'),
-  make('inews', 'iNews HD', 6, 'national', ['https://mncmedia.malingtv.workers.dev/inews.m3u8', ...APK_STREAMS.inews], 'linear-gradient(135deg,#dc2626,#111827)', 'https://www.rctiplus.com/tv/inews'),
+  make('inews', 'iNews HD', 6, 'national', ['https://live.i-news.tv/hls/1/stream.m3u8'], 'linear-gradient(135deg,#dc2626,#111827)', 'https://www.rctiplus.com/tv/inews'),
   make('transtv', 'Trans TV HD', 7, 'national', ['https://video.detik.com/transtv/smil:transtv.smil/index.m3u8', ...APK_STREAMS.transtv], 'linear-gradient(135deg,#0ea5e9,#1d4ed8)', 'https://www.transtv.co.id/live'),
   make('trans7', 'Trans7 HD', 8, 'national', ['https://video.detik.com/trans7/smil:trans7.smil/index.m3u8', ...APK_STREAMS.trans7], 'linear-gradient(135deg,#dc2626,#1e3a8a)', 'https://www.trans7.co.id/live-streaming'),
   make('antv', 'ANTV HD', 9, 'national', ['http://op-group1-swiftservehd-1.dens.tv/s/s07/index.m3u8?app_type=web&userid=lite&chname=antv'], 'linear-gradient(135deg,#f59e0b,#dc2626)', 'https://www.visionplus.id/webclient/#/live'),
