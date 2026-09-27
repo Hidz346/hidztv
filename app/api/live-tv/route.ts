@@ -23,9 +23,21 @@ export async function GET(request: NextRequest) {
   const nanz = await resolveNanzStreamTv(input);
 
   if (nanz.ok) {
+    let playbackUrl = nanz.playbackUrl;
+
+    try {
+      const upstream = new URL(nanz.playbackUrl);
+      if (upstream.hostname === 'nanzstream-api.vercel.app') {
+        const origin = new URL(request.url).origin;
+        playbackUrl = origin + '/api/live-tv/proxy?u=' + encodeURIComponent(nanz.playbackUrl);
+      }
+    } catch {
+      // Leave the API response untouched; the player will handle it as a normal source.
+    }
+
     return NextResponse.json({
       ok: true,
-      playbackUrl: nanz.playbackUrl,
+      playbackUrl,
       server: 'nanzstream-primary',
       endpoint: nanz.endpoint,
     });
