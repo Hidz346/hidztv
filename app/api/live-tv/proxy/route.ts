@@ -13,6 +13,8 @@ const ALLOWED_HOSTS = new Set([
   ...NANZSTREAM_DIRECT_HOSTS,
 ]);
 
+const MAX_REDIRECTS = 3;
+
 function isAllowed(url: URL) {
   return ALLOWED_HOSTS.has(url.hostname) || url.hostname.endsWith('.transvision.co.id');
 }
@@ -21,12 +23,14 @@ function proxyUrl(origin: string, target: string) {
   return origin + '/api/live-tv/proxy?u=' + encodeURIComponent(target);
 }
 
-function bodyLooksLikeManifest(contentType: string, targetUrl: URL) {
+function looksLikeManifest(contentType: string, targetUrl: URL) {
+  const type = contentType.toLowerCase();
   return (
-    (!contentType ||
-      contentType.includes('text/plain') ||
-      contentType.includes('application/octet-stream')) &&
-    targetUrl.pathname.toLowerCase().includes('.m3u8')
+    type.includes('mpegurl') ||
+    type.includes('vnd.apple.mpegurl') ||
+    targetUrl.pathname.toLowerCase().includes('.m3u8') ||
+    type.includes('text/plain') ||
+    type.includes('application/octet-stream')
   );
 }
 
@@ -36,22 +40,28 @@ function rewriteManifest(body: string, baseUrl: URL, origin: string) {
     if (!value || value.startsWith('#')) return value;
 
     try {
-      const absolute = new URL(value, baseUrl).toString();
-      return proxyUrl(origin, absolute);
+      const absolute = new URL(value, baseUrl);
+      if (!isAllowed(absolute)) return value;
+      return proxyUrl(origin, absolute.toString());
     } catch {
       return value;
     }
   };
 
   return body
-    .split('\n')
+    .split(/\r?\n/)
     .map((line) => {
       const trimmed = line.trim();
 
       if (trimmed.startsWith('#') && /URI=/i.test(trimmed)) {
         return trimmed.replace(/URI=(["'])(.*?)\1/i, (_, quote, value) => {
-          const absolute = new URL(value, baseUrl).toString();
-          return 'URI=' + quote + proxyUrl(origin, absolute) + quote;
+          try {
+            const absolute = new URL(value, baseUrl);
+            if (!isAllowed(absolute)) return 'URI=' + quote + value + quote;
+            return 'URI=' + quote + proxyUrl(origin, absolute.toString()) + quote;
+          } catch {
+            return 'URI=' + quote + value + quote;
+          }
         });
       }
 
@@ -59,6 +69,52 @@ function rewriteManifest(body: string, baseUrl: URL, origin: string) {
       return rewrite(line);
     })
     .join('\n');
+}
+
+async function fetchAllowed(url: URL, headers: HeadersInit) {
+  let current = new URL(url);
+
+  for (let redirects = 0; redirects <= MAX_REDIRECTS; redirects += 1) {
+    if (!isAllowed(current)) {
+      throw new Error('Redirected stream host is not allowed');
+    }
+
+    const response = await fetch(current, {
+      headers,
+      cache: 'no-store',
+      redirect: 'manual',
+    });
+
+    if (response.status < 300 || response.status >= 400) {
+      return { response, finalUrl: current };
+    }
+
+    const location = response.headers.get('location');
+    if (!location) {
+      return { response, finalUrl: current };
+    }
+
+    current = new URL(location, current);
+  }
+
+  throw new Error('Too many upstream redirects');
+}
+
+function corsHeaders(contentType: string) {
+  return {
+    'Content-Type': contentType,
+    'Cache-Control': 'no-store, no-cache, must-revalidate',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+    'Access-Control-Allow-Headers': '*',
+  };
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: corsHeaders('text/plain; charset=utf-8'),
+  });
 }
 
 export async function GET(request: NextRequest) {
@@ -82,58 +138,36 @@ export async function GET(request: NextRequest) {
             Accept: '*/*',
           };
 
-    const upstream = await fetch(targetUrl, {
-      headers: upstreamHeaders,
-      cache: 'no-store',
-      redirect: 'follow',
-    });
+    const { response: upstream, finalUrl } = await fetchAllowed(targetUrl, upstreamHeaders);
 
     if (!upstream.ok || !upstream.body) {
       return new NextResponse('Upstream stream unavailable', {
         status: upstream.status || 502,
+        headers: corsHeaders('text/plain; charset=utf-8'),
       });
     }
 
     const contentType = upstream.headers.get('content-type') || '';
-    const looksLikeManifest =
-      contentType.includes('mpegurl') ||
-      contentType.includes('application/vnd.apple.mpegurl') ||
-      targetUrl.pathname.endsWith('.m3u8') ||
-      bodyLooksLikeManifest(contentType, targetUrl);
 
-    if (looksLikeManifest) {
+    if (looksLikeManifest(contentType, finalUrl)) {
       const body = await upstream.text();
-      const rewritten = rewriteManifest(
-        body,
-        targetUrl,
-        request.nextUrl.origin,
-      );
+      const rewritten = rewriteManifest(body, finalUrl, request.nextUrl.origin);
 
       return new NextResponse(rewritten, {
         status: 200,
-        headers: {
-          'Content-Type': 'application/vnd.apple.mpegurl',
-          'Cache-Control': 'no-store, no-cache, must-revalidate',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, OPTIONS',
-          'Access-Control-Allow-Headers': '*',
-        },
+        headers: corsHeaders('application/vnd.apple.mpegurl'),
       });
     }
 
     return new NextResponse(upstream.body, {
       status: upstream.status,
-      headers: {
-        'Content-Type': contentType || 'application/octet-stream',
-        'Cache-Control': 'no-store',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': '*',
-      },
+      headers: corsHeaders(contentType || 'application/octet-stream'),
     });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Stream proxy failed';
-    return new NextResponse(message, { status: 502 });
+    const message = error instanceof Error ? error.message : 'Stream proxy failed';
+    return new NextResponse(message, {
+      status: 502,
+      headers: corsHeaders('text/plain; charset=utf-8'),
+    });
   }
 }
