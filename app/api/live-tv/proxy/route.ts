@@ -14,8 +14,7 @@ function isAllowed(url: URL) {
   return ALLOWED_HOSTS.has(url.hostname) || url.hostname.endsWith('.transvision.co.id');
 }
 
-function proxyUrl(request: NextRequest, target: string) {
-  const origin = new URL(request.url).origin;
+function proxyUrl(origin: string, target: string) {
   return origin + '/api/live-tv/proxy?u=' + encodeURIComponent(target);
 }
 
@@ -26,7 +25,7 @@ function rewriteManifest(body: string, baseUrl: URL, origin: string) {
 
     try {
       const absolute = new URL(value, baseUrl).toString();
-      return proxyUrl({ url: origin + '/api/live-tv/proxy' } as NextRequest, absolute);
+      return proxyUrl(origin, absolute);
     } catch {
       return value;
     }
@@ -40,7 +39,7 @@ function rewriteManifest(body: string, baseUrl: URL, origin: string) {
       if (trimmed.startsWith('#') && /URI=/i.test(trimmed)) {
         return trimmed.replace(/URI=(["'])(.*?)\1/i, (_, quote, value) => {
           const absolute = new URL(value, baseUrl).toString();
-          return 'URI=' + quote + proxyUrl({ url: origin + '/api/live-tv/proxy' } as NextRequest, absolute) + quote;
+          return 'URI=' + quote + proxyUrl(origin, absolute) + quote;
         });
       }
 
