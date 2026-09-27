@@ -424,7 +424,7 @@ export default function HidzTV() {
 
             <div className="flex gap-2 text-[9px] text-white/55">
               <span className="rounded-full bg-black/40 px-2 py-1">{quality}</span>
-              <span className="rounded-full bg-black/40 px-2 py-1">SRC {sourceNumber}</span>
+              <span className="rounded-full bg-black/40 px-2 py-1">SRC {sourceNumber}/{sourceCount || 1}</span>
             </div>
           </div>
 
