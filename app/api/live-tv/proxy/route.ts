@@ -170,7 +170,11 @@ export async function GET(request: NextRequest) {
             'User-Agent':
               'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0 Safari/537.36',
             Accept: '*/*',
-            Referer: targetUrl.origin + '/',
+            Referer: targetUrl.hostname.endsWith('.dens.tv')
+              ? 'https://www.dens.tv/'
+              : targetUrl.hostname.endsWith('.rctiplus.id')
+                ? 'https://www.rctiplus.com/'
+                : targetUrl.origin + '/',
           };
 
     const { response: upstream, finalUrl } = await fetchAllowed(targetUrl, upstreamHeaders);
