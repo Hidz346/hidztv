@@ -21,6 +21,15 @@ function proxyUrl(origin: string, target: string) {
   return origin + '/api/live-tv/proxy?u=' + encodeURIComponent(target);
 }
 
+function bodyLooksLikeManifest(contentType: string, targetUrl: URL) {
+  return (
+    (!contentType ||
+      contentType.includes('text/plain') ||
+      contentType.includes('application/octet-stream')) &&
+    targetUrl.pathname.toLowerCase().includes('.m3u8')
+  );
+}
+
 function rewriteManifest(body: string, baseUrl: URL, origin: string) {
   const rewrite = (raw: string) => {
     const value = raw.trim();
@@ -62,9 +71,21 @@ export async function GET(request: NextRequest) {
       return new NextResponse('Upstream host is not allowed', { status: 403 });
     }
 
+    const upstreamHeaders =
+      targetUrl.hostname === 'servicebuss.transvision.co.id' ||
+      targetUrl.hostname.endsWith('.transvision.co.id') ||
+      targetUrl.hostname === 'www.cubmu.com'
+        ? CUBMU_PROXY_HEADERS
+        : {
+            'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0 Safari/537.36',
+            Accept: '*/*',
+          };
+
     const upstream = await fetch(targetUrl, {
-      headers: CUBMU_PROXY_HEADERS,
+      headers: upstreamHeaders,
       cache: 'no-store',
+      redirect: 'follow',
     });
 
     if (!upstream.ok || !upstream.body) {
@@ -77,7 +98,8 @@ export async function GET(request: NextRequest) {
     const looksLikeManifest =
       contentType.includes('mpegurl') ||
       contentType.includes('application/vnd.apple.mpegurl') ||
-      targetUrl.pathname.endsWith('.m3u8');
+      targetUrl.pathname.endsWith('.m3u8') ||
+      bodyLooksLikeManifest(contentType, targetUrl);
 
     if (looksLikeManifest) {
       const body = await upstream.text();
@@ -93,6 +115,8 @@ export async function GET(request: NextRequest) {
           'Content-Type': 'application/vnd.apple.mpegurl',
           'Cache-Control': 'no-store, no-cache, must-revalidate',
           'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, OPTIONS',
+          'Access-Control-Allow-Headers': '*',
         },
       });
     }
@@ -103,6 +127,8 @@ export async function GET(request: NextRequest) {
         'Content-Type': contentType || 'application/octet-stream',
         'Cache-Control': 'no-store',
         'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': '*',
       },
     });
   } catch (error) {
