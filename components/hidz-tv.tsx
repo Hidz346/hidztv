@@ -8,7 +8,7 @@ import {
   Clapperboard,
   ExternalLink,
   Globe2,
-  HeartHandshake,
+  Heart,
   House,
   Maximize2,
   MonitorPlay,
@@ -587,7 +587,7 @@ export default function HidzTV() {
             ['international', 'Internasional', Globe2],
             ['entertainment', 'Hiburan & Sport', Clapperboard],
             ['kids', 'Kids', Baby],
-            ['religion', 'Religi', HeartHandshake],
+            ['religion', 'Religi', Heart],
           ].map(([id, label, Icon]) => {
             const IconComponent = Icon as typeof Tv;
             const count = CATEGORY_COUNTS[id as keyof typeof CATEGORY_COUNTS];
