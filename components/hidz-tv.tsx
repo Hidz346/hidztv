@@ -78,6 +78,7 @@ export default function HidzTV() {
   const [sourceNumber, setSourceNumber] = useState(1);
   const [quality, setQuality] = useState('Auto');
   const [details, setDetails] = useState(false);
+  const [sourceCount, setSourceCount] = useState(currentSelected?.sources.length ?? 0);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<HTMLDivElement>(null);
@@ -85,6 +86,7 @@ export default function HidzTV() {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sourceRef = useRef(0);
   const startedRef = useRef(false);
+  const runtimeSourcesRef = useRef<string[]>([]);
 
   const currentSelected = useMemo(
     () => CHANNELS.find((channel) => channel.id === selectedId) ?? CHANNELS[0],
@@ -145,12 +147,13 @@ export default function HidzTV() {
   };
 
   const sourcesFor = (profile: Profile) => {
-    if (!currentSelected.sources.length) return [];
+    const available = runtimeSourcesRef.current.length ? runtimeSourcesRef.current : currentSelected.sources;
+    if (!available.length) return [];
 
-    const preferredIndex = Math.min(profile.sourceIndex, currentSelected.sources.length - 1);
+    const preferredIndex = Math.min(profile.sourceIndex, available.length - 1);
     return [
-      currentSelected.sources[preferredIndex],
-      ...currentSelected.sources.filter((_, index) => index !== preferredIndex),
+      available[preferredIndex],
+      ...available.filter((_, index) => index !== preferredIndex),
     ];
   };
 
@@ -264,7 +267,7 @@ export default function HidzTV() {
     failed();
   };
 
-  const loadStream = () => {
+  const loadStream = async () => {
     clearTimeoutRef();
     destroyHls();
     resetVideo();
@@ -274,6 +277,8 @@ export default function HidzTV() {
     setQuality('Auto');
     setPlaying(false);
     setMessage('');
+    runtimeSourcesRef.current = [];
+    setSourceCount(currentSelected.sources.length);
 
     if (server === 'embed') {
       if (currentSelected.providerUrl) {
@@ -286,6 +291,25 @@ export default function HidzTV() {
     }
 
     const profile = profileOf(server);
+    setStatus('connecting');
+    setMessage('Mencari source Live TV…');
+
+    try {
+      const response = await fetch('/api/live-tv?channel=' + encodeURIComponent(currentSelected.name), {
+        cache: 'no-store',
+      });
+      const json = (await response.json()) as { ok?: boolean; playbackUrl?: string };
+
+      if (response.ok && json.ok && json.playbackUrl) {
+        runtimeSourcesRef.current = [json.playbackUrl, ...currentSelected.sources];
+        setSourceCount(runtimeSourcesRef.current.length);
+      } else {
+        runtimeSourcesRef.current = [...currentSelected.sources];
+      }
+    } catch {
+      runtimeSourcesRef.current = [...currentSelected.sources];
+    }
+
     const sources = sourcesFor(profile);
 
     if (!sources.length) {
@@ -532,7 +556,7 @@ export default function HidzTV() {
           <span className="rounded-full border border-white/8 bg-[#101010] px-3 py-1.5">Server {profileOf(server).label}</span>
           <span className="rounded-full border border-white/8 bg-[#101010] px-3 py-1.5">{profileOf(server).note}</span>
           <span className="rounded-full border border-white/8 bg-[#101010] px-3 py-1.5">
-            {currentSelected.sources.length ? 'Source ' + sourceNumber + '/' + currentSelected.sources.length : 'Provider resmi'}
+            {sourceCount ? 'Source ' + sourceNumber + '/' + sourceCount : 'Provider resmi'}
           </span>
         </div>
 
