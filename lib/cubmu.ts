@@ -5,8 +5,8 @@ const CHANNELS_URL = 'https://servicebuss.transvision.co.id/global/v4/channel-li
 const CUBMU_ORIGIN = 'https://www.cubmu.com';
 const CUBMU_REFERER = 'https://www.cubmu.com/';
 
-const EMAIL = process.env.CUBMU_EMAIL || 'master_account@transvision.co.id';
-const PASSWORD = process.env.CUBMU_PASSWORD || 'hospitality';
+const EMAIL = process.env.CUBMU_EMAIL;
+const PASSWORD = process.env.CUBMU_PASSWORD;
 
 type TokenResponse = {
   data?: {
@@ -78,6 +78,10 @@ function decryptManifest(value: string): string {
 async function getAccessToken(): Promise<string> {
   if (cachedToken && Date.now() < tokenExpiresAt - 60_000) {
     return cachedToken;
+  }
+
+  if (!EMAIL || !PASSWORD) {
+    throw new Error('CUBMU_EMAIL dan CUBMU_PASSWORD belum dikonfigurasi di environment server');
   }
 
   const payload = {
