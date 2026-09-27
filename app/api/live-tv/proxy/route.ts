@@ -13,10 +13,41 @@ const ALLOWED_HOSTS = new Set([
   ...NANZSTREAM_DIRECT_HOSTS,
 ]);
 
-const MAX_REDIRECTS = 3;
+const MAX_REDIRECTS = 4;
+
+const ALLOWED_SUFFIXES = [
+  '.akamaized.net',
+  '.amagi.tv',
+  '.cloudfront.net',
+  '.wurl.tv',
+  '.siar.us',
+  '.intechmedia.net',
+  '.dens.tv',
+  '.rctiplus.id',
+  '.mncnow.id',
+  '.cnbcindonesia.com',
+  '.cnnindonesia.com',
+  '.medcom.id',
+  '.tvri.go.id',
+  '.garuda.tv',
+  '.edgenextcdn.net',
+  '.streamlock.net',
+];
+
+function isPrivateHostname(hostname: string) {
+  const host = hostname.toLowerCase().replace(/^\\[|\\]$/g, '');
+  if (host === 'localhost' || host.endsWith('.localhost') || host === '::1') return true;
+  if (/^127\\./.test(host) || /^10\\./.test(host) || /^192\\.168\\./.test(host)) return true;
+  if (/^172\\.(1[6-9]|2\\d|3[0-1])\\./.test(host)) return true;
+  if (/^169\\.254\\./.test(host) || host === '0.0.0.0') return true;
+  if (host === 'metadata.google.internal' || host === 'metadata.google') return true;
+  return false;
+}
 
 function isAllowed(url: URL) {
-  return ALLOWED_HOSTS.has(url.hostname) || url.hostname.endsWith('.transvision.co.id');
+  if (!/^https?:$/.test(url.protocol) || isPrivateHostname(url.hostname)) return false;
+  if (ALLOWED_HOSTS.has(url.hostname) || url.hostname.endsWith('.transvision.co.id')) return true;
+  return ALLOWED_SUFFIXES.some((suffix) => url.hostname.endsWith(suffix));
 }
 
 function proxyUrl(origin: string, target: string) {
@@ -25,7 +56,7 @@ function proxyUrl(origin: string, target: string) {
 
 function looksLikeManifest(contentType: string, targetUrl: URL) {
   const type = contentType.toLowerCase();
-  const pathLooksLikeManifest = targetUrl.pathname.toLowerCase().includes('.m3u8');
+  const pathLooksLikeManifest = /\\.m3u8(?:$|[?#])/i.test(targetUrl.pathname + targetUrl.search);
   const genericText = type.includes('text/plain') || type.includes('application/octet-stream');
 
   return (
@@ -43,8 +74,7 @@ function rewriteManifest(body: string, baseUrl: URL, origin: string) {
 
     try {
       const absolute = new URL(value, baseUrl);
-      if (!isAllowed(absolute)) return value;
-      return proxyUrl(origin, absolute.toString());
+      return isAllowed(absolute) ? proxyUrl(origin, absolute.toString()) : value;
     } catch {
       return value;
     }
@@ -59,8 +89,9 @@ function rewriteManifest(body: string, baseUrl: URL, origin: string) {
         return trimmed.replace(/URI=(["'])(.*?)\1/i, (_, quote, value) => {
           try {
             const absolute = new URL(value, baseUrl);
-            if (!isAllowed(absolute)) return 'URI=' + quote + value + quote;
-            return 'URI=' + quote + proxyUrl(origin, absolute.toString()) + quote;
+            return isAllowed(absolute)
+              ? 'URI=' + quote + proxyUrl(origin, absolute.toString()) + quote
+              : 'URI=' + quote + value + quote;
           } catch {
             return 'URI=' + quote + value + quote;
           }
@@ -85,6 +116,7 @@ async function fetchAllowed(url: URL, headers: HeadersInit) {
       headers,
       cache: 'no-store',
       redirect: 'manual',
+      signal: AbortSignal.timeout(15_000),
     });
 
     if (response.status < 300 || response.status >= 400) {
@@ -138,6 +170,7 @@ export async function GET(request: NextRequest) {
             'User-Agent':
               'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0 Safari/537.36',
             Accept: '*/*',
+            Referer: targetUrl.origin + '/',
           };
 
     const { response: upstream, finalUrl } = await fetchAllowed(targetUrl, upstreamHeaders);
