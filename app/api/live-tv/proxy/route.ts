@@ -25,12 +25,14 @@ function proxyUrl(origin: string, target: string) {
 
 function looksLikeManifest(contentType: string, targetUrl: URL) {
   const type = contentType.toLowerCase();
+  const pathLooksLikeManifest = targetUrl.pathname.toLowerCase().includes('.m3u8');
+  const genericText = type.includes('text/plain') || type.includes('application/octet-stream');
+
   return (
     type.includes('mpegurl') ||
     type.includes('vnd.apple.mpegurl') ||
-    targetUrl.pathname.toLowerCase().includes('.m3u8') ||
-    type.includes('text/plain') ||
-    type.includes('application/octet-stream')
+    pathLooksLikeManifest ||
+    (genericText && pathLooksLikeManifest)
   );
 }
 
