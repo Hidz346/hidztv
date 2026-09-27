@@ -15,7 +15,6 @@ import {
   Pause,
   Play,
   Search,
-  Settings2,
   Signal,
   Tv,
   Volume2,
@@ -69,7 +68,7 @@ export default function HidzTV() {
   const [server] = useState<ServerId>('nanzstream');
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
-  const [status, setStatus] = useState<'idle' | 'connecting' | 'live' | 'fallback' | 'error' | 'embed'>('idle');
+  const [status, setStatus] = useState<'idle' | 'connecting' | 'live' | 'fallback' | 'error'>('idle');
   const [message, setMessage] = useState('');
   const [sourceNumber, setSourceNumber] = useState(1);
   const [quality, setQuality] = useState('Auto');
@@ -415,7 +414,7 @@ export default function HidzTV() {
                 <Signal className="mx-auto text-red-400" size={24} />
                 <div className="mt-3 text-sm font-bold">Stream direct tidak tersedia</div>
                 <p className="mt-2 text-xs leading-relaxed text-zinc-500">
-                  Source eksternal dapat berubah, offline, terkena CORS, atau dibatasi provider.
+                  Source HLS NanzStream dapat berubah, offline, atau dibatasi oleh server upstream.
                 </p>
                 <div className="mt-4 flex flex-wrap justify-center gap-2">
                   <button onClick={loadStream} className="rounded-xl bg-white px-4 py-2 text-[11px] font-black uppercase text-black">
@@ -507,10 +506,10 @@ export default function HidzTV() {
                 Lite, Fast dan Max menggunakan profile buffer/latency yang berbeda pada HLS.
               </div>
               <div className="rounded-2xl border border-white/8 p-4">
-                Embed memakai provider resmi saat channel tidak mempunyai direct HLS yang cocok untuk browser.
+                HidzTV hanya menggunakan source Live TV yang ditemukan dari APK NanzStream.
               </div>
               <div className="rounded-2xl border border-white/8 p-4">
-                Uptime siaran tetap bergantung pada provider upstream, wilayah, CORS, dan perubahan URL.
+                Ketersediaan siaran tetap bergantung pada server HLS upstream dan perubahan URL.
               </div>
             </div>
           </div>
