@@ -260,26 +260,56 @@ export default function HidzTV() {
     setQuality('Auto');
     setPlaying(false);
     setMessage('');
-    const profile = profileOf(server);
     setStatus('connecting');
-    setMessage('Menghubungkan ke source Live TV…');
+    setMessage('Mencari source Live TV…');
 
-    // Keep HLS requests same-origin first so upstream CORS policies do not
-    // prevent the browser player from loading the manifest and segments.
-    // The original stream URL remains as the fallback.
+    const profile = profileOf(server);
     const origin = window.location.origin;
-    const directSources = currentSelected.sources.filter(Boolean);
-    const proxySources = directSources.map(
+    const fallbackSources = currentSelected.sources.filter(Boolean);
+    const fallbackProxySources = fallbackSources.map(
       (source) => origin + '/api/live-tv/proxy?u=' + encodeURIComponent(source),
     );
-    runtimeSourcesRef.current = [...proxySources, ...directSources];
+
+    let resolvedSources: string[] = [];
+
+    try {
+      const response = await fetch(
+        '/api/live-tv?channel=' + encodeURIComponent(currentSelected.name),
+        { cache: 'no-store' },
+      );
+
+      if (response.ok) {
+        const data = (await response.json()) as {
+          sources?: string[];
+          playbackUrl?: string;
+          manifestUrl?: string;
+        };
+
+        resolvedSources = [
+          ...(data.sources ?? []),
+          ...(data.playbackUrl ? [data.playbackUrl] : []),
+          ...(data.manifestUrl ? [data.manifestUrl] : []),
+        ].filter(Boolean);
+      }
+    } catch {
+      // The static APK catalogue below remains available if the resolver
+      // cannot be reached.
+    }
+
+    const allSources = [
+      ...resolvedSources,
+      ...fallbackProxySources,
+      ...fallbackSources,
+    ];
+
+    runtimeSourcesRef.current = [...new Set(allSources)];
     setSourceCount(runtimeSourcesRef.current.length);
 
     const sources = sourcesFor(profile);
 
     if (!sources.length) {
       setStatus('error');
-      setMessage('Channel ini belum memiliki source HLS.');
+      setMessage('Source HLS channel ini tidak tersedia.');
       return;
     }
 
