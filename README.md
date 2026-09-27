@@ -54,3 +54,11 @@ Vercel detects the project as a Next.js application.
 ## Source availability
 
 A live URL can stop working because of upstream changes, CORS, geo restrictions, expiring tokens, referer requirements, or provider-side downtime. Those conditions are outside HIDZTV and are handled with source failover/provider fallback where possible.
+
+## APK-based Live TV resolver
+
+HIDZTV now includes a server-side CubMu resolver ported from the Live TV flow found in the supplied NanzStream APK. The port reproduces the APK's token-generation format, channel-list request, `__NEXT_DATA__` live-page parsing, encrypted HLS manifest decryption (AES-128-CFB), and a Vercel route that rewrites HLS manifests through a controlled proxy.
+
+Set `CUBMU_EMAIL` and `CUBMU_PASSWORD` as Vercel server environment variables. Do not prefix them with `NEXT_PUBLIC_`.
+
+The browser never receives the CubMu login credentials. Playback receives only the HIDZTV proxy URL.
