@@ -49,18 +49,18 @@ type Candidate = {
 function normalize(value: string) {
   return value
     .toLowerCase()
-    .replace(/hd\\b/g, '')
+    .replace(/hd\b/g, '')
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
 }
 
 function looksLikeUrl(value: string) {
-  return /^https?:\\/\\//i.test(value);
+  return /^https?:\/\//i.test(value);
 }
 
 function looksLikePlaybackUrl(value: string) {
   return looksLikeUrl(value) && (
-    /\\.m3u8(?:[?#]|$)/i.test(value) ||
+    /\.m3u8(?:[?#]|$)/i.test(value) ||
     /(?:hls|stream|live|manifest|playlist)/i.test(value)
   );
 }
@@ -99,8 +99,10 @@ function collectCandidates(
   }
 
   const names = getObjectNames(value);
-  const nameMatch = needle && names.some(
-    (name) => name === needle || name.includes(needle) || needle.includes(name),
+  const nameMatch = Boolean(
+    needle && names.some(
+      (name) => name === needle || name.includes(needle) || needle.includes(name),
+    ),
   );
   const score = parentScore + (nameMatch ? 100 : 0);
 
@@ -152,7 +154,7 @@ async function fetchJson(url: string) {
   try {
     return JSON.parse(text) as JsonValue;
   } catch {
-    const match = text.match(/https?:\\/\\/[^\\s"'<>]+(?:\\.m3u8|[?&](?:stream|url|source)=)[^\\s"'<>]*/i);
+    const match = text.match(/https?:\/\/[^\s"'<>]+(?:\.m3u8|[?&](?:stream|url|source)=)[^\s"'<>]*/i);
     return match?.[0] ?? null;
   }
 }
