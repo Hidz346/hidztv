@@ -1,0 +1,51 @@
+// Sources extracted from the supplied NanzStream v1.3.35 APK.
+// Only URLs actually present in that APK are listed here.
+// Some upstream URLs can expire or change independently of HIDZTV.
+
+export const APK_STREAMS = {
+  rtv: [
+    'https://rtvstream.rtv.co.id:4555/hls/rtv.m3u8',
+    'https://op-flashcon-digdayahd-1.dens.tv/h/h10/01.m3u8',
+  ],
+  kompastv: [
+    'https://op-flashcon-digdayahd-1.dens.tv/s/s104/index.m3u8',
+  ],
+  trans7: ['https://green-night-d2b4.iontv.workers.dev/trans7.m3u8'],
+  transtv: ['https://green-night-d2b4.iontv.workers.dev/transtv.m3u8'],
+  inews: ['https://live.i-news.tv/hls/1/stream.m3u8'],
+  metro: ['https://edge.medcom.id/live-edge/smil:metro.smil/playlist.m3u8'],
+  magna: ['https://edge.medcom.id/live-edge/smil:magna.smil/chunklist_w521170343_b1128000_sleng.m3u8'],
+  tvriNasional: ['https://ott-balancer.tvri.go.id/live/eds/Nasional/hls/Nasional.m3u8'],
+  tvriJakarta: ['https://ott-balancer.tvri.go.id/live/eds/DKI/hls/DKI.m3u8'],
+  tvriJabar: ['https://ott-balancer.tvri.go.id/live/eds/Jabar/hls/Jabar.m3u8'],
+  tvriJatim: ['https://ott-balancer.tvri.go.id/live/eds/Jatim/hls/Jatim.m3u8'],
+  tvriWorld: ['https://ott-balancer.tvri.go.id/live/eds/TVRIWorld/hls/TVRIWorld.m3u8'],
+  jawaPos: ['http://122.248.43.242:1935/JAWAPOSTVJKT/_definst_/myStream/playlist.m3u8'],
+  banjar: ['https://banjartv.siar.us/banjartv/live/playlist.m3u8'],
+  caruban: ['https://stream.carubantv.id/hls/0/stream.m3u8'],
+  dhoho: ['https://dhohotv.siar.us/dhohotv/live/playlist.m3u8'],
+  daai: ['https://pull.daaiplus.com/live-DAAIPLUS/live-DAAIPLUS_HD.m3u8'],
+  cna: ['https://amg01082-cna-amg01082c1-rlaxx-us-11304.playouts.now.amagi.tv/playlist.m3u8'],
+  nhk: [
+    'https://media-tyo.hls.nhkworld.jp/hls/w/live/master.m3u8',
+  ],
+  bloomberg: ['https://bloomberg.com/media-manifest/streams/qt.m3u8'],
+  dwEnglish: ['https://dwamdstream102.akamaized.net/hls/live/2015525/dwstream102/index.m3u8'],
+  dwDeutsch: ['https://dwamdstream104.akamaized.net/hls/live/2015530/dwstream104/index.m3u8'],
+  arirang: ['https://amdlive-ch01-ctnd-com.akamaized.net/arirang_1ch/smil:arirang_1ch.smil/playlist.m3u8'],
+  trtWorld: ['https://tv-trtworld.medya.trt.com.tr/master.m3u8'],
+  beinSports: ['https://bein-xtra-bein.amagi.tv/playlist.m3u8'],
+  foxSports: ['https://d1jzu95oc8fgt3.cloudfront.net/FOX_Sports.m3u8'],
+  redBull: ['https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8'],
+  bbcEarth: ['https://amg00793-amg00793c6-xumo-us-2669.playouts.now.amagi.tv/BBCStudios-BBCEarthA-hls/playlist.m3u8'],
+  cartoon: [],
+  babyShark: ['https://newidco-babysharktv-1-us.roku.wurl.tv/playlist.m3u8'],
+  moonbug: ['https://moonbug-rokuus.amagi.tv/playlist.m3u8'],
+  toonGoggles: ['https://amg01329-otterainc-toongoggles-samsungau-ad-4c.amagi.tv/playlist/amg01329-otterainc-toongoggles-samsungau/playlist.m3u8'],
+  mojiCartoon: ['https://odmedia-mojitv-1-be.samsung.wurl.tv/playlist.m3u8'],
+  kidsFlix: ['https://shd-amg-fast.edgenextcdn.net/tx011/playlist.m3u8'],
+  ahsan: ['https://5bf7b725107e5.streamlock.net/ahsantv/ahsantv/playlist.m3u8'],
+  salam: ['https://live.salamtelevisi.com/hls/0/stream.m3u8'],
+  tawaf: ['https://tvstreamcast.com/tawaftv.m3u8'],
+  alwafa: [],
+} as const;
