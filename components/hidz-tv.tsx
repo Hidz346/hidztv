@@ -173,7 +173,7 @@ export default function HidzTV() {
       setMessage('Semua source HLS yang tersedia gagal dimuat.');
     };
 
-    timeoutRef.current = setTimeout(failed, 10000);
+    timeoutRef.current = setTimeout(failed, 7000);
 
     if (Hls.isSupported()) {
       const hls = new Hls({
@@ -184,11 +184,11 @@ export default function HidzTV() {
         maxBufferHole: 0.8,
         liveSyncDurationCount: profile.liveSyncDurationCount,
         liveMaxLatencyDurationCount: profile.liveSyncDurationCount + 5,
-        manifestLoadingTimeOut: 8000,
-        levelLoadingTimeOut: 8000,
-        fragLoadingTimeOut: 8000,
-        manifestLoadingMaxRetry: 1,
-        levelLoadingMaxRetry: 1,
+        manifestLoadingTimeOut: 5000,
+        levelLoadingTimeOut: 5000,
+        fragLoadingTimeOut: 5000,
+        manifestLoadingMaxRetry: 0,
+        levelLoadingMaxRetry: 0,
         fragLoadingMaxRetry: 2,
       });
 
@@ -261,28 +261,20 @@ export default function HidzTV() {
     setQuality('Auto');
     setPlaying(false);
     setMessage('');
-    runtimeSourcesRef.current = [];
-    setSourceCount(currentSelected.sources.length);
-
     const profile = profileOf(server);
     setStatus('connecting');
-    setMessage('Mencari source Live TV…');
+    setMessage('Menghubungkan ke source Live TV…');
 
-    try {
-      const response = await fetch('/api/live-tv?channel=' + encodeURIComponent(currentSelected.name), {
-        cache: 'no-store',
-      });
-      const json = (await response.json()) as { ok?: boolean; playbackUrl?: string };
-
-      if (response.ok && json.ok && json.playbackUrl) {
-        runtimeSourcesRef.current = [json.playbackUrl, ...currentSelected.sources];
-        setSourceCount(runtimeSourcesRef.current.length);
-      } else {
-        runtimeSourcesRef.current = [...currentSelected.sources];
-      }
-    } catch {
-      runtimeSourcesRef.current = [...currentSelected.sources];
-    }
+    // Try the recovered APK HLS URL directly first. Going through the Vercel
+    // proxy adds an extra network hop and makes every channel feel slow.
+    // The local proxy remains the fallback for sources that require CORS handling.
+    const origin = window.location.origin;
+    const directSources = currentSelected.sources;
+    const proxySources = directSources.map(
+      (source) => origin + '/api/live-tv/proxy?u=' + encodeURIComponent(source),
+    );
+    runtimeSourcesRef.current = [...directSources, ...proxySources];
+    setSourceCount(runtimeSourcesRef.current.length);
 
     const sources = sourcesFor(profile);
 
