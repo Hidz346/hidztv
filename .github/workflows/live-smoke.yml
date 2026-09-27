@@ -19,54 +19,31 @@ jobs:
           done
           exit 1
 
-      - name: Probe upstream candidates
+      - name: Test working iNews upstream and HIDZTV proxy
         run: |
           node <<'NODE'
-          const candidates = {
-            iNews: [
-              'http://nxanv-live-cdn.mncnow.id/live/eds/inews-hdd/sa_hls/inews-hdd.m3u8',
-              'http://nyanv-live-cdn.mncnow.id/live/eds/inews-hdd/sa_hls/inews-hdd.m3u8',
-              'https://live.rctiplus.id/rctiplus/inews_720p.m3u8',
-              'https://mncmedia.malingtv.workers.dev/inews.m3u8',
-              'https://live.i-news.tv/hls/1/stream.m3u8'
-            ],
-            RCTI: [
-              'https://live.rctiplus.id/rctiplus/rcti_720p.m3u8',
-              'https://mncmedia.malingtv.workers.dev/rcti.m3u8',
-              'http://nxanv-live-cdn.mncnow.id/live/eds/rcti-2/sa_hls/rcti-2.m3u8'
-            ],
-            MNCTV: [
-              'https://live.rctiplus.id/rctiplus/mnctv_720p.m3u8',
-              'https://mncmedia.malingtv.workers.dev/mnctv.m3u8',
-              'http://nxanv-live-cdn.mncnow.id/live/eds/MNCTV-HD2/sa_hls/MNCTV-HD2.m3u8'
-            ],
-            GTV: [
-              'https://mncmedia.malingtv.workers.dev/gtv.m3u8',
-              'http://nxanv-live-cdn.mncnow.id/live/eds/GTV-2/sa_hls/GTV-2.m3u8',
-              'https://live.rctiplus.id/rctiplus/gtv_360p.m3u8'
-            ]
-          };
+          const target = 'https://live.i-news.tv/hls/1/stream.m3u8';
 
-          async function probe(url) {
-            try {
-              const r = await fetch(url, {
-                headers: {
-                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) HIDZTV-SmokeTest/1.0',
-                  'Accept': '*/*'
-                },
-                redirect: 'follow'
-              });
-              const body = await r.text();
-              return { url, status:r.status, ok:r.ok, contentType:r.headers.get('content-type'), prefix:body.slice(0,120) };
-            } catch (e) {
-              return { url, error:String(e) };
-            }
+          async function check(url) {
+            const r = await fetch(url, {
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) HIDZTV-SmokeTest/1.0',
+                'Accept': '*/*'
+              },
+              redirect: 'follow'
+            });
+            const body = await r.text();
+            console.log(JSON.stringify({
+              url,
+              status: r.status,
+              ok: r.ok,
+              contentType: r.headers.get('content-type'),
+              prefix: body.slice(0,300)
+            }, null, 2));
           }
 
           (async()=>{
-            for (const [name, list] of Object.entries(candidates)) {
-              console.log('\n### '+name);
-              for (const url of list) console.log(await probe(url));
-            }
-          })().catch(e=>{console.error(e);process.exit(1)});
+            await check(target);
+            await check('https://hidztv-com.vercel.app/api/live-tv/proxy?u=' + encodeURIComponent(target));
+          })().catch(e=>{ console.error(e); process.exit(1); });
           NODE
