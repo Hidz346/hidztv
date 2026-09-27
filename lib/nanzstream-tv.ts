@@ -99,4 +99,10 @@ export const NANZSTREAM_DIRECT_HOSTS = [
   'shd-amg-fast.edgenextcdn.net',
   'stream-us-east-1.getpublica.com',
   'stream.carubantv.id',
+  'live.rctiplus.id',
+  'op-group1-swiftservehd-1.dens.tv',
+  'live.cnnindonesia.com',
+  'live.cnbcindonesia.com',
+  'hgmtv.com',
+  'flv.intechmedia.net',
 ];
