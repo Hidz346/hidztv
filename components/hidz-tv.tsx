@@ -172,7 +172,7 @@ export default function HidzTV() {
       setMessage('Semua source HLS yang tersedia gagal dimuat.');
     };
 
-    timeoutRef.current = setTimeout(failed, 7000);
+    timeoutRef.current = setTimeout(failed, 18000);
 
     if (Hls.isSupported()) {
       const hls = new Hls({
@@ -183,12 +183,12 @@ export default function HidzTV() {
         maxBufferHole: 0.8,
         liveSyncDurationCount: profile.liveSyncDurationCount,
         liveMaxLatencyDurationCount: profile.liveSyncDurationCount + 5,
-        manifestLoadingTimeOut: 5000,
-        levelLoadingTimeOut: 5000,
-        fragLoadingTimeOut: 5000,
-        manifestLoadingMaxRetry: 1,
-        levelLoadingMaxRetry: 1,
-        fragLoadingMaxRetry: 1,
+        manifestLoadingTimeOut: 12000,
+        levelLoadingTimeOut: 12000,
+        fragLoadingTimeOut: 12000,
+        manifestLoadingMaxRetry: 2,
+        levelLoadingMaxRetry: 2,
+        fragLoadingMaxRetry: 2,
       });
 
       hlsRef.current = hls;
