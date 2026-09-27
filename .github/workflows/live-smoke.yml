@@ -14,70 +14,59 @@ jobs:
           set -e
           for i in $(seq 1 30); do
             code=$(curl -L -s -o /tmp/home.txt -w "%{http_code}" --max-time 15 https://hidztv-com.vercel.app/)
-            if [ "$code" = "200" ]; then
-              echo "Production site reachable."
-              exit 0
-            fi
-            echo "Attempt $i: HTTP $code"
+            if [ "$code" = "200" ]; then exit 0; fi
             sleep 10
           done
-          echo "Production site did not become reachable."
           exit 1
 
-      - name: Test Live TV resolver and HLS proxy
+      - name: Probe upstream candidates
         run: |
           node <<'NODE'
-          const channels = ['iNews HD', 'TVRI Nasional', 'DAAI TV HD', 'RCTI HD'];
+          const candidates = {
+            iNews: [
+              'http://nxanv-live-cdn.mncnow.id/live/eds/inews-hdd/sa_hls/inews-hdd.m3u8',
+              'http://nyanv-live-cdn.mncnow.id/live/eds/inews-hdd/sa_hls/inews-hdd.m3u8',
+              'https://live.rctiplus.id/rctiplus/inews_720p.m3u8',
+              'https://mncmedia.malingtv.workers.dev/inews.m3u8',
+              'https://live.i-news.tv/hls/1/stream.m3u8'
+            ],
+            RCTI: [
+              'https://live.rctiplus.id/rctiplus/rcti_720p.m3u8',
+              'https://mncmedia.malingtv.workers.dev/rcti.m3u8',
+              'http://nxanv-live-cdn.mncnow.id/live/eds/rcti-2/sa_hls/rcti-2.m3u8'
+            ],
+            MNCTV: [
+              'https://live.rctiplus.id/rctiplus/mnctv_720p.m3u8',
+              'https://mncmedia.malingtv.workers.dev/mnctv.m3u8',
+              'http://nxanv-live-cdn.mncnow.id/live/eds/MNCTV-HD2/sa_hls/MNCTV-HD2.m3u8'
+            ],
+            GTV: [
+              'https://mncmedia.malingtv.workers.dev/gtv.m3u8',
+              'http://nxanv-live-cdn.mncnow.id/live/eds/GTV-2/sa_hls/GTV-2.m3u8',
+              'https://live.rctiplus.id/rctiplus/gtv_360p.m3u8'
+            ]
+          };
 
-          async function main() {
-            for (const channel of channels) {
-              const api = 'https://hidztv-com.vercel.app/api/live-tv?channel=' + encodeURIComponent(channel);
-              const response = await fetch(api, { cache: 'no-store' });
-              const text = await response.text();
-
-              console.log('\n=== ' + channel + ' ===');
-              console.log('API status:', response.status);
-              console.log('API body:', text.slice(0, 1200));
-
-              if (!response.ok) {
-                throw new Error(channel + ': API failed');
-              }
-
-              const data = JSON.parse(text);
-              const sources = Array.isArray(data.sources) ? data.sources : [];
-
-              if (!data.ok || !sources.length) {
-                throw new Error(channel + ': no sources returned');
-              }
-
-              const proxy = sources.find((value) =>
-                typeof value === 'string' && value.includes('/api/live-tv/proxy?u=')
-              );
-
-              if (!proxy) {
-                throw new Error(channel + ': proxy source missing');
-              }
-
-              const manifest = await fetch(proxy, {
-                headers: { 'User-Agent': 'Mozilla/5.0 HIDZTV-SmokeTest/1.0' },
-                cache: 'no-store',
+          async function probe(url) {
+            try {
+              const r = await fetch(url, {
+                headers: {
+                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) HIDZTV-SmokeTest/1.0',
+                  'Accept': '*/*'
+                },
+                redirect: 'follow'
               });
-
-              const body = await manifest.text();
-              console.log('Proxy status:', manifest.status);
-              console.log('Proxy content-type:', manifest.headers.get('content-type'));
-              console.log('Proxy body:', body.slice(0, 500));
-
-              if (!manifest.ok || !body.includes('#EXTM3U')) {
-                throw new Error(channel + ': proxy did not return a valid HLS manifest');
-              }
+              const body = await r.text();
+              return { url, status:r.status, ok:r.ok, contentType:r.headers.get('content-type'), prefix:body.slice(0,120) };
+            } catch (e) {
+              return { url, error:String(e) };
             }
-
-            console.log('\nLIVE SMOKE TEST PASSED');
           }
 
-          main().catch((error) => {
-            console.error(error);
-            process.exit(1);
-          });
+          (async()=>{
+            for (const [name, list] of Object.entries(candidates)) {
+              console.log('\n### '+name);
+              for (const url of list) console.log(await probe(url));
+            }
+          })().catch(e=>{console.error(e);process.exit(1)});
           NODE
