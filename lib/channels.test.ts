@@ -1,0 +1,3 @@
+import { describe, expect, it } from "vitest";
+import { CHANNELS, getCategoryCounts } from "./channels";
+describe("channel catalogue",()=>{it("has unique ids and numbers",()=>{expect(new Set(CHANNELS.map(c=>c.id)).size).toBe(CHANNELS.length);expect(new Set(CHANNELS.map(c=>c.number)).size).toBe(CHANNELS.length)});it("has consistent category counts",()=>{const c=getCategoryCounts();expect(c.all).toBe(CHANNELS.length);expect(c.national).toBeGreaterThan(0);expect(c.international).toBeGreaterThan(0);expect(c.entertainment).toBeGreaterThan(0);expect(c.kids).toBeGreaterThan(0);expect(c.religion).toBeGreaterThan(0)})});
