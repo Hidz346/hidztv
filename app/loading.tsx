@@ -1,0 +1,1 @@
+export default function Loading(){return <main className="grid min-h-screen place-items-center bg-[var(--hz-bg)] text-[var(--hz-text)]"><div className="hz-card rounded-2xl px-6 py-5 text-center"><div className="text-[10px] font-black uppercase tracking-[.2em] text-[var(--hz-accent-2)]">HIDZTV</div><div className="mt-2 text-sm font-black">Memuat aplikasi...</div></div></main>}

@@ -1,26 +1,16 @@
-import type { Metadata, Viewport } from 'next';
-import './globals.css';
+import type { Metadata } from "next";
+import type { ReactNode } from "react";
+import "./globals.css";
 
-export const metadata: Metadata = {
-  title: 'HidzTV — Live TV Universe',
-  description: 'HidzTV live channel directory with resilient HLS playback.',
-  applicationName: 'HidzTV',
-  icons: {
-    icon: 'https://www.gobox.my.id/file/IcHjU.png',
-  },
+const logoUrl=process.env.NEXT_PUBLIC_HIDZPROJECT_LOGO??"https://www.gobox.my.id/file/vVUoB.png";
+
+export const metadata:Metadata={
+  title:"HidzTv — Live TV",
+  description:"HidzTv · Live TV streaming dengan branding HIDZPROJECT.",
+  icons:{icon:logoUrl,shortcut:logoUrl,apple:logoUrl},
+  openGraph:{title:"HidzTv — Live TV",description:"Live TV dari HidzProject.",images:[logoUrl]}
 };
 
-export const viewport: Viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  viewportFit: 'cover',
-  themeColor: '#090909',
-};
-
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return (
-    <html lang="id" suppressHydrationWarning>
-      <body>{children}</body>
-    </html>
-  );
+export default function RootLayout({children}:{children:ReactNode}){
+  return <html lang="id" data-theme="dark" suppressHydrationWarning><body>{children}</body></html>;
 }

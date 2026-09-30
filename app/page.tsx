@@ -1,5 +1,2 @@
-import HidzTV from '@/components/hidz-tv';
-
-export default function HomePage() {
-  return <HidzTV />;
-}
+import HidzTvApp from "@/components/hidztv-app";
+export default function HomePage(){return <HidzTvApp/>}

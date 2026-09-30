@@ -1,0 +1,7 @@
+import { LoaderCircle, Radio, RotateCcw, TriangleAlert } from "lucide-react";
+type Props={status:"idle"|"connecting"|"playing"|"fallback"|"paused"|"error"|"unsupported";message:string;onRetry:()=>void};
+export default function PlayerStatus({status,message,onRetry}:Props){
+ if(status==="playing"||status==="paused")return null;
+ const icon=status==="error"||status==="unsupported"?<TriangleAlert className="size-5"/>:status==="fallback"?<Radio className="size-5"/>:<LoaderCircle className="size-5 animate-spin"/>;
+ return <div className="absolute inset-0 grid place-items-center bg-black/78 p-5 text-white"><div className="max-w-sm rounded-2xl border-2 border-white/20 bg-black/70 p-6 text-center backdrop-blur-sm"><div className="mx-auto grid size-11 place-items-center rounded-xl border-2 border-white/20">{icon}</div><div className="mt-3 text-sm font-black">{status==="fallback"?"Mencoba source berikutnya":status==="error"?"Stream tidak tersedia":status==="unsupported"?"Browser tidak mendukung HLS":"Menghubungkan ke stream"}</div><p className="mt-2 text-xs leading-relaxed text-white/65">{message}</p>{(status==="error"||status==="unsupported")&&<button type="button" onClick={onRetry} className="mt-4 inline-flex items-center gap-2 rounded-lg border-2 border-white bg-white px-4 py-2.5 text-xs font-black text-black shadow-[3px_3px_0_rgba(216,255,62,1)]"><RotateCcw size={14}/>Coba lagi</button>}</div></div>
+}
