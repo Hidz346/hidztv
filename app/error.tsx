@@ -1,0 +1,4 @@
+"use client";
+export default function Error({error,reset}:{error:Error&{digest?:string};reset:()=>void}){
+ return <main className="grid min-h-screen place-items-center bg-[var(--hz-bg)] px-5 text-[var(--hz-text)]"><div className="hz-card max-w-md rounded-2xl p-6 text-center"><p className="text-[10px] font-black uppercase tracking-[.2em] text-[var(--hz-accent-2)]">HIDZTV ERROR</p><h1 className="mt-2 text-2xl font-black">Halaman mengalami kesalahan</h1><p className="mt-2 text-sm text-[var(--hz-muted)]">Coba muat ulang bagian ini tanpa meninggalkan aplikasi.</p><button type="button" onClick={reset} className="hz-button mt-5 rounded-lg bg-[var(--hz-accent)] px-4 py-2.5 text-sm font-black text-black">Coba lagi</button></div></main>
+}
