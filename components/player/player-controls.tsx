@@ -1,0 +1,5 @@
+import { Maximize2, Pause, Play, Volume2, VolumeX } from "lucide-react";
+type Props={playing:boolean;muted:boolean;onPlayPause:()=>void;onMute:()=>void;onFullscreen:()=>void};
+export default function PlayerControls({playing,muted,onPlayPause,onMute,onFullscreen}:Props){
+ return <div className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-between gap-2 bg-gradient-to-t from-black/90 via-black/45 to-transparent p-3 pt-12"><div className="flex items-center gap-2"><button type="button" onClick={onPlayPause} className="grid size-10 place-items-center rounded-full border-2 border-white bg-white text-black" aria-label={playing?"Pause":"Play"}>{playing?<Pause size={16}/>:<Play size={16}/>}</button><button type="button" onClick={onMute} className="grid size-10 place-items-center rounded-full border border-white/30 bg-black/45 text-white" aria-label={muted?"Unmute":"Mute"}>{muted?<VolumeX size={16}/>:<Volume2 size={16}/>}</button></div><button type="button" onClick={onFullscreen} className="grid size-10 place-items-center rounded-full border border-white/30 bg-black/45 text-white" aria-label="Fullscreen"><Maximize2 size={16}/></button></div>
+}
